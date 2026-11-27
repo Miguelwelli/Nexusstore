@@ -297,6 +297,7 @@ para quem tiver runners macOS — ele ainda precisaria ser assinado com o seu ce
 swift test                        # núcleo: 79 testes
 python3 Tools/verify_xcodeproj.py # .xcodeproj sincronizado
 python3 Tools/check_swift_style.py
+python3 Tools/check_workflows.py
 ./Tools/ci/parse_all.sh $(find NexusStore Tests -name '*.swift')
 ```
 

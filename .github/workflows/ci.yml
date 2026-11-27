@@ -14,13 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: "Guard: workflow files"
+        run: python3 Tools/check_workflows.py
       - name: Swift toolchain
         run: swift --version
-      - name: Guard: Xcode project references
+      - name: "Guard: Xcode project references"
         run: |
           set -o pipefail
           python3 Tools/verify_xcodeproj.py 2>&1 | tee guards.log
-      - name: Guard: Swift style rules
+      - name: "Guard: Swift style rules"
         run: |
           set -o pipefail
           python3 Tools/check_swift_style.py 2>&1 | tee -a guards.log
