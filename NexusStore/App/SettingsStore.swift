@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import Combine
 
 /// Preferences that must survive an app relaunch but do not belong to the game catalog.
 @MainActor

@@ -213,7 +213,11 @@ struct AdminView: View {
                             draft.categories.append(category.rawValue)
                         }
                     } label: {
-                        Label(category.title, systemImage: draft.categories.contains(category.rawValue) ? "checkmark" : "")
+                        if draft.categories.contains(category.rawValue) {
+                            Label(category.title, systemImage: "checkmark")
+                        } else {
+                            Text(category.title)
+                        }
                     }
                 }
             } label: {

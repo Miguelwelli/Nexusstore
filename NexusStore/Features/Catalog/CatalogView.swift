@@ -16,6 +16,14 @@ struct CatalogView: View {
     @State private var favoritesOnly = false
     @State private var didApplyInitial = false
 
+    private var hasActiveFilters: Bool { activeFilterCount > 0 }
+
+    private func clearFilters() {
+        searchText = ""
+        selectedCategories.removeAll()
+        favoritesOnly = false
+    }
+
     private var activeFilterCount: Int {
         var count = selectedCategories.count
         if favoritesOnly { count += 1 }
@@ -24,13 +32,9 @@ struct CatalogView: View {
     }
 
     private var results: [Game] {
-        var filter = CatalogFilter(searchText: searchText, categories: selectedCategories, sort: sort)
-        var games = catalog.filtered(filter)
-        if favoritesOnly {
-            games = games.filter { catalog.favorites.contains($0.id) }
-            filter.searchText = ""
-        }
-        return games
+        let games = catalog.filtered(CatalogFilter(searchText: searchText, categories: selectedCategories, sort: sort))
+        guard favoritesOnly else { return games }
+        return games.filter { catalog.favorites.contains($0.id) }
     }
 
     var body: some View {
@@ -166,7 +170,11 @@ struct CatalogView: View {
                     Button {
                         sort = option
                     } label: {
-                        Label(option.title, systemImage: option == sort ? "checkmark" : "")
+                        if option == sort {
+                            Label(option.title, systemImage: "checkmark")
+                        } else {
+                            Text(option.title)
+                        }
                     }
                 }
             } label: {
@@ -187,11 +195,6 @@ struct CatalogView: View {
     private var grid: some View {
         Group {
             if results.isEmpty {
-                let clearAction: (() -> Void)? = activeFilterCount > 0 ? {
-                    searchText = ""
-                    selectedCategories.removeAll()
-                    favoritesOnly = false
-                } : nil
                 EmptyStateView(
                     icon: "magnifyingglass",
                     title: "Nenhum jogo encontrado",
@@ -199,7 +202,7 @@ struct CatalogView: View {
                         ? "Ajuste os filtros ou cadastre novos jogos no painel administrativo."
                         : "Nenhum resultado para “\(searchText)”. Tente outro termo.",
                     actionTitle: activeFilterCount > 0 ? "Limpar filtros" : nil,
-                    action: clearAction
+                    action: hasActiveFilters ? clearFilters : nil
                 )
             } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 18)], spacing: 20) {
