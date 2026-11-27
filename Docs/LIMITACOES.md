@@ -16,7 +16,7 @@ projeto) de **limitações deste ambiente de desenvolvimento**.
 
 ### O que foi feito para compensar
 
-1. **Núcleo compilado e testado de verdade:** Swift 6.4 no Linux, 101 testes automatizados.
+1. **Núcleo compilado e testado de verdade:** Swift 6.4 no Linux, 116 testes automatizados.
 2. **Integração real de FTP:** servidor pyftpdlib sobe no CI; upload de 2 MiB verificado byte a byte.
 3. **Todos os 71 arquivos Swift passam pelo parser do compilador** (`swiftc -frontend -parse`),
    incluindo as telas SwiftUI que só compilam no Xcode.

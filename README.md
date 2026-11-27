@@ -28,7 +28,7 @@
 | Central de transferência (porcentagem, velocidade, tempo restante, estados) | ✅ Implementado |
 | Instalador HTTP local do PS4 (porta 12800) e servidor HTTP no iPhone | ✅ Implementado (métodos alternativos) |
 | Build do app iOS | ⚠️ Código completo; compilação final precisa de Xcode (ver limitações) |
-| Testes do núcleo em Swift | ✅ 101 testes automatizados + integração FTP real |
+| Testes do núcleo em Swift | ✅ 116 testes automatizados + integração FTP real |
 
 > **Transparência:** este ambiente de desenvolvimento é Linux. O núcleo (catálogo, FTP, DDP,
 > transferências) é **compilado e testado** com Swift 6.4 em CI; as telas SwiftUI são verificadas
@@ -164,7 +164,7 @@ Passo a passo com capturas em [`Docs/PS4-SETUP.md`](Docs/PS4-SETUP.md).
 ## Testes
 
 ```bash
-swift test                     # 101 testes do núcleo (Linux/macOS)
+swift test                     # 116 testes do núcleo (Linux/macOS)
 python3 Tools/verify_xcodeproj.py
 python3 Tools/check_swift_style.py
 ```
@@ -173,7 +173,7 @@ O CI (GitHub Actions, `.github/workflows/ci.yml`) executa, a cada push:
 
 1. **Guardas**: projeto Xcode sincronizado com os fontes, parênteses/chaves balanceados, sem
    `TODO`/`fatalError` em telas.
-2. **Build + 101 testes** com Swift 6.4 (Linux).
+2. **Build + 116 testes** com Swift 6.4 (Linux).
 3. **Integração real de FTP**: sobe um **servidor FTP de verdade** (pyftpdlib) e envia um pacote de
    2 MiB com o mesmo `FTPClient` usado no app, validando tamanho, progresso incremental, `SIZE` e `LIST`.
 

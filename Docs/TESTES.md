@@ -3,7 +3,7 @@
 ## Como rodar
 
 ```bash
-swift test                                   # 101 testes (Core) — Linux e macOS
+swift test                                   # 116 testes (Core) — Linux e macOS
 python3 Tools/verify_xcodeproj.py            # projeto Xcode em sincronia com os fontes
 python3 Tools/check_swift_style.py           # guardas estruturais nos arquivos Swift
 ./Tools/ci/parse_all.sh $(find NexusStore Tests -name '*.swift')
@@ -87,6 +87,20 @@ swift test --filter FTPIntegrationTests
 - Cancelar um job na fila produz evento `cancelled`.
 - `discardTemporaryFile` remove o artefato.
 
+### `GeminiProviderTests`
+- endpoint e header corretos (`v1beta/models/...:generateContent`, `x-goog-api-key`);
+- corpo envia `tools.google_search`, `responseMimeType` e `responseSchema`;
+- **jogo sem citação em `groundingMetadata` é descartado e contado**;
+- `packageSize` mantido só quando parseável; URL `http` promovida a `https`;
+- 403 → `unauthorized`, 429 → `rateLimited`, chave vazia falha sem rede.
+
+### `AutoCatalogTests` (RAWG)
+- mapeamento de campos reais, `platforms=18` na URL, caminho exato `/api/games`;
+- slug de gênero correto (`role-playing-games-rpg`) e tags (`horror`, `open-world`);
+- fallback quando a RAWG rejeita a taxonomia (400);
+- chave do Google detectada localmente com mensagem acionável;
+- verificação de link PKG (HTML, 404, arquivo pequeno, HTTP plano).
+
 ### `TransferConfigurationTests`
 - `deleteLocalFileWhenDone = false` mantém o `.pkg` após sucesso; alteração via
   `updateConfiguration` vale para o próximo job.
@@ -106,11 +120,11 @@ swift test --filter FTPIntegrationTests
 
 ## Evidências do CI
 
-- `Swift core (build + tests)` — build + 101 testes: **sucesso**.
+- `Swift core (build + tests)` — build + 116 testes: **sucesso**.
 - `FTP integration (real server)` — 3 testes com pyftpdlib: **sucesso**.
 - `Tools/ci/parse_all.sh` — 71 arquivos Swift aprovados pelo parser do compilador.
 - `Tools/check_workflows.py` — impede YAML inválido nos workflows (ver LIMITACOES).
-- `Swift core summary` (notice do CI): `Executed 101 tests, with 3 tests skipped and 0 failures`.
+- `Swift core summary` (notice do CI): `Executed 116 tests, with 3 tests skipped and 0 failures`.
 
 > Logs completos ficam em **Actions → CI**. O acesso aos logs brutos via API é bloqueado neste
 > ambiente; os resultados foram lidos pelas *annotations* dos jobs (sucesso/falha por teste).
