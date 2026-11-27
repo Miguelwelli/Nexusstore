@@ -29,11 +29,9 @@ public enum SeedCatalog {
 
     /// Loads `Resources/Seed/seed-catalog.json` from the module bundle.
     public static func games() -> [Game] {
-        #if SWIFT_PACKAGE
-        let bundle: Bundle? = Bundle.module
-        #else
+        // `Bundle.module` only exists when the package declares resources; the iOS app embeds the
+        // JSON through `SeedCatalog.games()` as well, so fall back to `Bundle.main`.
         let bundle: Bundle? = Bundle.main
-        #endif
         guard let url = bundle?.url(forResource: "seed-catalog", withExtension: "json"),
               let data = try? Data(contentsOf: url) else {
             return []
