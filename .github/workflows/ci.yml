@@ -34,3 +34,48 @@ jobs:
         run: |
           python3 Tools/extract_diagnostics.py build.log errors.log
           python3 Tools/publish_log.py errors.log "swift core"
+
+  ftp-integration:
+    name: FTP integration (real server)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start a real FTP server (pyftpdlib)
+        run: |
+          set -e
+          mkdir -p /tmp/ftproot
+          python3 -m pip install --quiet pyftpdlib
+          python3 - <<'PYSRV' > /tmp/ftp.log 2>&1 &
+import logging
+logging.basicConfig(filename="/tmp/ftp-internal.log", level=logging.INFO)
+from pyftpdlib.authorizers import DummyAuthorizer
+from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
+authorizer = DummyAuthorizer()
+# Full write access for the integration user, on a throwaway directory.
+authorizer.add_user("ps4", "ps4", "/tmp/ftproot", perm="elradfmwMT")
+handler = FTPHandler
+handler.authorizer = authorizer
+handler.passive_ports = range(50000, 50050)
+FTPServer(("0.0.0.0", 2121), handler).serve_forever()
+PYSRV
+          echo $! > /tmp/ftp.pid
+          for i in $(seq 1 30); do
+            if (echo > /dev/tcp/127.0.0.1/2121) 2>/dev/null; then echo "FTP server is listening"; break; fi
+            sleep 1
+          done
+      - name: Run FTP integration tests
+        env:
+          NEXUS_FTP_INTEGRATION: "1"
+          NEXUS_FTP_HOST: 127.0.0.1
+          NEXUS_FTP_PORT: "2121"
+          NEXUS_FTP_USER: ps4
+          NEXUS_FTP_PASSWORD: ps4
+        run: |
+          set -o pipefail
+          swift test --filter FTPIntegrationTests -v 2>&1 | tee integration.log
+      - name: Publish diagnostics
+        if: failure()
+        run: |
+          python3 Tools/extract_diagnostics.py integration.log integration-errors.log
+          python3 Tools/publish_log.py integration-errors.log "ftp integration"
