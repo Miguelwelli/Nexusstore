@@ -269,6 +269,28 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 
 ---
 
+## Instalando no iPhone (leia antes de procurar um .ipa)
+
+**Não existe `.ipa` pronto neste repositório, e baixar um `.ipa` de terceiros não é o caminho certo
+para este app.** Um `.ipa` é o binário **assinado com o seu certificado Apple**; sem essa assinatura o
+iOS recusa a instalação. Além disso, um `.ipa` assinado por outra pessoa não instala no seu aparelho
+(a assinatura é vinculada ao aparelho/conta).
+
+O caminho correto leva ~10 minutos e não custa nada:
+
+1. Tenha um **Mac com Xcode** (ou um Mac alugado por hora, ex.: MacinCloud/MacStadium).
+2. `git clone` do repositório → `open NexusStore.xcodeproj`.
+3. Em **Signing & Capabilities**, escolha seu Apple ID em *Team* (conta gratuita serve) e, se preciso,
+   troque o *Bundle Identifier* para algo único seu.
+4. Conecte o iPhone e pressione **⌘R**.
+5. No iPhone, autorize em **Ajustes → Geral → VPN e Gerenciamento de Dispositivos**.
+
+Detalhes, TestFlight e geração de `.ipa` assinado em [`Docs/BUILD.md`](Docs/BUILD.md).
+O repositório inclui ainda um workflow manual (`iOS build + IPA`) que gera um `.ipa` **não assinado**
+para quem tiver runners macOS — ele ainda precisaria ser assinado com o seu certificado.
+
+---
+
 ## Verificação rápida do repositório
 
 ```bash

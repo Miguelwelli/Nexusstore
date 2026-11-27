@@ -5,6 +5,20 @@ Não há dependências externas: o projeto não resolve Swift Packages, CocoaPod
 
 ---
 
+## 0. Existe um .ipa pronto?
+
+Não. E isso é proposital:
+
+- Um `.ipa` só instala no iPhone se estiver **assinado com o seu certificado Apple** e vinculado ao seu
+  aparelho/conta. Um `.ipa` "genérico" baixado da internet não funciona no seu iPhone.
+- Assinar exige macOS + Xcode + sua conta Apple. Não é possível gerar nem assinar um `.ipa` neste
+  ambiente (Linux) nem no CI usado por este repositório (sem runners macOS disponíveis).
+- Existe o workflow manual `.github/workflows/ios-ipa.yml`, que produz um `.ipa` **não assinado** para
+  quem tiver runners macOS: ele ainda precisa ser assinado (Xcode, Apple Configurator ou uma
+  ferramenta como o `codesign`/Sideloadly).
+
+O caminho mais rápido e gratuito: siga o passo 2 abaixo (10 minutos, com seu Apple ID).
+
 ## 1. Abrir o projeto
 
 ```bash
