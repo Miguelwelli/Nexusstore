@@ -133,6 +133,38 @@ final class AutoCatalogTests: XCTestCase {
         }
     }
 
+    func testRequestsGoToExactlyTheDocumentedEndpoint() async throws {
+        Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
+        _ = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 2))
+        let url = try XCTUnwrap(Stub.requestedURLs.first)
+        XCTAssertEqual(url.host, "api.rawg.io")
+        XCTAssertEqual(url.path, "/api/games", "sem barra dupla nem caminho divergente")
+        XCTAssertNotNil(url.query?.range(of: "platforms=18"))
+    }
+
+    func testGoogleKeyIsRejectedLocallyWithAHelpfulMessage() async {
+        let googleKey = "AIzaSy" + String(repeating: "b", count: 32)
+        XCTAssertTrue(RAWGMetadataProvider.looksLikeGoogleKey(googleKey))
+        XCTAssertFalse(RAWGMetadataProvider.looksLikeGoogleKey("d4f1c9a7b8e2f3a1c5d6e7f8091a2b3c"))
+        do {
+            _ = try await makeProvider(key: googleKey).search(MetadataQuery(categories: ["acao"], limit: 1))
+            XCTFail("a chave do Google não pode ser aceita")
+        } catch let error as MetadataProviderError {
+            XCTAssertEqual(error, .wrongProviderKey)
+            XCTAssertTrue(error.errorDescription!.contains("rawg.io"))
+        } catch {
+            XCTFail("erro inesperado: \(error)")
+        }
+        XCTAssertTrue(Stub.requestedURLs.isEmpty, "nada deve ser enviado para a rede")
+    }
+
+    func testNotFoundHasItsOwnExplanation() {
+        let message = MetadataProviderError.server(404).errorDescription ?? ""
+        XCTAssertTrue(message.contains("404"))
+        XCTAssertTrue(message.contains("endereço da API"), "404 deve indicar endereço, não credencial")
+        XCTAssertNotEqual(message, MetadataProviderError.server(500).errorDescription)
+    }
+
     func testRateLimitCarriesRetryAfter() async {
         Stub.handler = { _ in (429, ["Retry-After": "30"], Data()) }
         do {

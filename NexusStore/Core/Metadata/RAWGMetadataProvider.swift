@@ -20,7 +20,9 @@ public struct RAWGMetadataProvider: MetadataProvider {
 
     private let apiKey: String
     private let session: URLSession
-    private let baseURL = URL(string: "https://api.rawg.io/api")!
+    /// Base for every endpoint; `public` so tests can assert the exact URL shape.
+    public static let apiBaseURLString = "https://api.rawg.io/api"
+    private var baseURL: URL { URL(string: Self.apiBaseURLString)! }
 
     public init(apiKey: String, session: URLSession = .shared) {
         self.apiKey = apiKey
@@ -161,7 +163,11 @@ public struct RAWGMetadataProvider: MetadataProvider {
     }
 
     private func get(path: String, query: [URLQueryItem]) async throws -> [String: Any] {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        // Built by concatenation on purpose: appendingPathComponent("/games") can yield "api//games"
+        // on some Foundation versions, and RAWG answers 404 for that.
+        guard var components = URLComponents(string: baseURL.absoluteString + path) else {
+            throw MetadataProviderError.invalidResponse
+        }
         components.queryItems = query
         guard let url = components.url else { throw MetadataProviderError.invalidResponse }
 
