@@ -184,9 +184,12 @@ public struct SectionHeader: View {
                 .foregroundStyle(NexusTheme.Palette.textPrimary)
             Spacer()
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(NexusTheme.Palette.redBright)
+                Button(action: action) {
+                    Text(actionTitle)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(NexusTheme.Palette.redBright)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -315,10 +318,13 @@ public struct EmptyStateView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             if let actionTitle, let action {
-                Button(actionTitle, action: action)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(NexusTheme.Palette.redBright)
-                    .padding(.top, 4)
+                Button(action: action) {
+                    Text(actionTitle)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(NexusTheme.Palette.redBright)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
             }
         }
         .padding(28)

@@ -35,11 +35,13 @@ struct TransferSettingsView: View {
                 }
                 .tint(NexusTheme.Palette.red)
 
-                Button("SALVAR AJUSTES") {
+                Button {
                     preferences.update { $0.transferConfiguration = configuration }
                     transfers.updateConfiguration(configuration)
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     dismiss()
+                } label: {
+                    Text("SALVAR AJUSTES").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryActionButtonStyle())
 
@@ -75,11 +77,14 @@ struct TransferSettingsView: View {
             diagnosticRow("Transferências na sessão", "\(transfers.jobs.count)")
             diagnosticRow("Fila", "\(transfers.queuedJobs.count)")
             diagnosticRow("Motor", transfers.phase.title)
-            Button("Limpar histórico e temporários") {
+            Button {
                 transfers.clearHistory()
+            } label: {
+                Text("Limpar histórico e temporários")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(NexusTheme.Palette.redBright)
             }
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(NexusTheme.Palette.redBright)
+            .buttonStyle(.plain)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)

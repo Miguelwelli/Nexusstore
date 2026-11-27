@@ -362,11 +362,14 @@ struct PS4View: View {
                                     .foregroundStyle(NexusTheme.Palette.textTertiary)
                             }
                             Spacer()
-                            Button("Conectar") {
+                            Button {
                                 discovery.connect(to: console)
+                            } label: {
+                                Text("Conectar")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(NexusTheme.Palette.redBright)
                             }
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(NexusTheme.Palette.redBright)
+                            .buttonStyle(.plain)
                         }
                         .padding(12)
                         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(NexusTheme.Palette.surface.opacity(0.75)))

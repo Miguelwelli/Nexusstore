@@ -112,9 +112,14 @@ struct SearchView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(NexusTheme.Palette.textPrimary)
                         Spacer()
-                        Button("Limpar") { settings.clearSearches() }
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(NexusTheme.Palette.redBright)
+                        Button {
+                            settings.clearSearches()
+                        } label: {
+                            Text("Limpar")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(NexusTheme.Palette.redBright)
+                        }
+                        .buttonStyle(.plain)
                     }
                     ForEach(settings.value.recentSearches, id: \.self) { term in
                         Button {

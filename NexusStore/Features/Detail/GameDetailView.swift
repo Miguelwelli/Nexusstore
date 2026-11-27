@@ -183,11 +183,14 @@ struct GameDetailView: View {
                     Text("Nenhum console conectado")
                         .foregroundStyle(NexusTheme.Palette.textSecondary)
                     Spacer()
-                    Button("Conectar") {
+                    Button {
                         router.section = .ps4
+                    } label: {
+                        Text("Conectar")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(NexusTheme.Palette.redBright)
                     }
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(NexusTheme.Palette.redBright)
+                    .buttonStyle(.plain)
                 }
                 .font(.system(size: 12, weight: .medium))
                 .padding(12)

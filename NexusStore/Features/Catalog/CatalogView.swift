@@ -250,13 +250,16 @@ struct FiltersSheet: View {
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(NexusTheme.Palette.textPrimary)
                     Spacer()
-                    Button("Limpar") {
+                    Button {
                         selected.removeAll()
                         favoritesOnly = false
                         sort = .popular
+                    } label: {
+                        Text("Limpar")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(NexusTheme.Palette.redBright)
                     }
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(NexusTheme.Palette.redBright)
+                    .buttonStyle(.plain)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {

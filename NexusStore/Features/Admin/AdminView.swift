@@ -148,9 +148,14 @@ struct AdminView: View {
                         .foregroundStyle(NexusTheme.Palette.textSecondary)
                         .lineLimit(1)
                     Spacer()
-                    Button("Cancelar") { resetForm() }
-                        .font(.system(size: 11.5, weight: .semibold))
-                        .foregroundStyle(NexusTheme.Palette.redBright)
+                    Button {
+                        resetForm()
+                    } label: {
+                        Text("Cancelar")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(NexusTheme.Palette.redBright)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 

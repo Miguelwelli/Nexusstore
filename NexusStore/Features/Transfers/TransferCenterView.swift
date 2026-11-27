@@ -232,9 +232,14 @@ struct TransferCenterView: View {
                         .kerning(0.6)
                         .foregroundStyle(NexusTheme.Palette.textTertiary)
                     Spacer()
-                    Button("Limpar") { transfers.clearHistory() }
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(NexusTheme.Palette.redBright)
+                    Button {
+                        transfers.clearHistory()
+                    } label: {
+                        Text("Limpar")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(NexusTheme.Palette.redBright)
+                    }
+                    .buttonStyle(.plain)
                 }
                 ForEach(transfers.history) { job in
                     HStack(spacing: 12) {
