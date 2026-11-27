@@ -175,9 +175,9 @@ final class CatalogQueryTests: XCTestCase {
 
     private func games() -> [Game] {
         [
-            Game(name: "Ghost of Tsushima", description: "Samurai em ação", categories: ["acao", "mundo-aberto"], sizeText: "48.5 GB", rating: 4.9, ratingCount: 18_400, createdAt: Date(timeIntervalSince1970: 100)),
-            Game(name: "Bloodborne", description: "Action RPG soulslike", categories: ["acao", "soulslike"], sizeText: "36.2 GB", rating: 4.8, ratingCount: 9_000, createdAt: Date(timeIntervalSince1970: 300)),
-            Game(name: "God of War Ragnarök", description: "Aventura nórdica", categories: ["acao", "aventura"], sizeText: "84.3 GB", rating: 4.9, ratingCount: 24_800, createdAt: Date(timeIntervalSince1970: 200), isFeatured: true)
+            Game(name: "Ghost of Tsushima", description: "Samurai em ação", categories: ["acao", "mundo-aberto"], sizeText: "48.5 GB", createdAt: Date(timeIntervalSince1970: 100), rating: 4.9, ratingCount: 18_400),
+            Game(name: "Bloodborne", description: "Action RPG soulslike", categories: ["acao", "soulslike"], sizeText: "36.2 GB", createdAt: Date(timeIntervalSince1970: 300), rating: 4.8, ratingCount: 9_000),
+            Game(name: "God of War Ragnarök", description: "Aventura nórdica", categories: ["acao", "aventura"], sizeText: "84.3 GB", createdAt: Date(timeIntervalSince1970: 200), isFeatured: true, rating: 4.9, ratingCount: 24_800)
         ]
     }
 

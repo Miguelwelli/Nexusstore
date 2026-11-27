@@ -6,6 +6,10 @@ private func server(_ lines: [String]) -> ScriptedSocket {
     ScriptedSocket(responses: lines.map { $0 + "\r\n" })
 }
 
+private func chunked(_ lines: [String]) -> ScriptedSocket {
+    ScriptedSocket(responses: lines.map { Data(($0 + "\r\n").utf8) })
+}
+
 final class FTPClientTests: XCTestCase {
 
     func testConnectReadsGreeting() throws {
@@ -51,9 +55,8 @@ final class FTPClientTests: XCTestCase {
     }
 
     func testMultilineRepliesAreJoined() throws {
-        let socket = ScriptedSocket(responses: [
-            Data("220-Welcome to PS4\r\n220-This is a demo\r\n220 Ready\r\n".utf8)
-        ])
+        let socket = ScriptedSocket(responses: ["220-Welcome to PS4\r\n220-This is a demo\r\n220 Ready\r\n"])
+        _ = chunked
         let client = FTPClient(provider: ScriptedProvider([socket]))
         try client.connect(host: "10.0.0.1", port: 2121)
         XCTAssertTrue(client.isConnected)
