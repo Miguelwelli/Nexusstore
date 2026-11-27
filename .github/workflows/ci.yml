@@ -20,11 +20,12 @@ jobs:
         run: |
           python3 Tools/verify_xcodeproj.py
           python3 Tools/check_swift_style.py
-      - name: Parse every Swift file with swift-syntax
+      - name: Parse every Swift file (syntax-only)
         run: |
           FILES=$(find NexusStore Tests -name '*.swift' | sort)
           echo "$FILES" | wc -l
-          echo "::notice title=swift-syntax::$(swift Tools/ci/ParseSwift.swift $FILES 2>&1 | tee parse.log | tail -3 | tr '\n' ' ')"
+          ./Tools/ci/parse_all.sh $FILES 2>&1 | tee parse.log
+          echo "::notice title=swift parse::$(tail -1 parse.log)"
       - name: Build core library
         run: |
           echo "Swift toolchain: $(swift --version 2>&1 | head -1)" > build.log
