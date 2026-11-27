@@ -43,9 +43,23 @@ public struct RAWGMetadataProvider: MetadataProvider {
 
     // MARK: - Search
 
+    /// Cheap local sanity check for keys that cannot possibly work here.
+    ///
+    /// Google keys start with `AIza` and are 39 characters long. Pasting one is the most common
+    /// mistake because the reference design mentions Gemini, so it is worth explaining locally
+    /// instead of showing a bare 401.
+    public static func looksLikeGoogleKey(_ key: String) -> Bool {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("AIza") && trimmed.count > 30
+    }
+
     public func search(_ query: MetadataQuery) async throws -> MetadataSearchResult {
-        guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else {
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedKey.isEmpty else {
             throw MetadataProviderError.missingCredential
+        }
+        guard !Self.looksLikeGoogleKey(trimmedKey) else {
+            throw MetadataProviderError.wrongProviderKey
         }
         let genres = Self.genreSlugs(for: query.categories)
         let tags = Self.tagSlugs(for: query.categories)

@@ -159,10 +159,10 @@ final class AutoCatalogTests: XCTestCase {
     }
 
     func testNotFoundHasItsOwnExplanation() {
-        let message = MetadataProviderError.server(404).errorDescription ?? ""
+        let message = MetadataProviderError.server(status: 404).errorDescription ?? ""
         XCTAssertTrue(message.contains("404"))
         XCTAssertTrue(message.contains("endereço da API"), "404 deve indicar endereço, não credencial")
-        XCTAssertNotEqual(message, MetadataProviderError.server(500).errorDescription)
+        XCTAssertNotEqual(message, MetadataProviderError.server(status: 500).errorDescription)
     }
 
     func testRateLimitCarriesRetryAfter() async {
