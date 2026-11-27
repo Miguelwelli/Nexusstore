@@ -45,6 +45,33 @@ final class ByteFormattingTests: XCTestCase {
     }
 }
 
+final class ArtworkReferenceTests: XCTestCase {
+
+    func testBundledAssetNameIsAccepted() {
+        XCTAssertEqual(ArtworkReference(rawValue: "cover_ghost").bundledName, "cover_ghost")
+        XCTAssertTrue(ArtworkReference(rawValue: "cover_ghost").isValid)
+    }
+
+    func testRemoteHTTPSArtwork() {
+        let reference = ArtworkReference(rawValue: "https://cdn.example.com/cover.jpg")
+        XCTAssertNotNil(reference.remoteURL)
+        XCTAssertTrue(reference.isValid)
+    }
+
+    func testInvalidArtworkIsRejected() {
+        XCTAssertFalse(ArtworkReference(rawValue: "http://cdn.example.com/cover.jpg").isValid)
+        XCTAssertFalse(ArtworkReference(rawValue: "  ").isValid)
+        XCTAssertEqual(ArtworkReference(rawValue: ""), .none)
+    }
+
+    func testPackageSlug() {
+        let game = Game(name: "God of War Ragnarök", downloadURLString: "")
+        XCTAssertEqual(game.remotePackageName, "god-of-war-ragnarok.pkg")
+        let withURL = Game(name: "X", downloadURLString: "https://cdn.example.com/pkg/ghost_v2.pkg")
+        XCTAssertEqual(withURL.remotePackageName, "ghost_v2.pkg")
+    }
+}
+
 final class URLValidatorTests: XCTestCase {
 
     func testAcceptsHTTPSPackageLinks() {
@@ -68,5 +95,30 @@ final class URLValidatorTests: XCTestCase {
     func testSuggestedFileName() {
         let url = URL(string: "https://cdn.example.com/pkg/ghost_v2.pkg")!
         XCTAssertEqual(HTTPSURLValidator.suggestedFileName(for: url, fallback: "jogo.pkg"), "ghost_v2.pkg")
+    }
+}
+
+final class AdminCredentialTests: XCTestCase {
+
+    func testSHA256KnownVectors() {
+        XCTAssertEqual(SHA256Hash.hex(SHA256Hash.digest(Data("abc".utf8))),
+                       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+        XCTAssertEqual(SHA256Hash.hex(SHA256Hash.digest(Data("".utf8))),
+                       "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+        let long = String(repeating: "a", count: 1000)
+        XCTAssertEqual(SHA256Hash.hex(SHA256Hash.digest(Data(long.utf8))),
+                       "41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3")
+    }
+
+    func testPasswordValidationAndHashing() {
+        XCTAssertNotNil(AdminCredential.validate(password: "123"))
+        XCTAssertNil(AdminCredential.validate(password: "1234"))
+        XCTAssertNotNil(AdminCredential.validate(password: " 1234"))
+
+        let salt = AdminCredential.makeSalt()
+        let hash = AdminCredential.hash(password: "senha", salt: salt)
+        XCTAssertEqual(hash, AdminCredential.hash(password: "senha", salt: salt))
+        XCTAssertNotEqual(hash, AdminCredential.hash(password: "senha", salt: salt + "x"))
+        XCTAssertEqual(hash.count, 64)
     }
 }

@@ -41,3 +41,23 @@ public enum Formatting {
         return formatter.string(from: date)
     }
 }
+
+/// Public access point used by the app to load the demo catalog shipped in the app bundle.
+public enum DemoCatalogBridge {
+    /// Decodes `seed-catalog.json` from the main bundle (the iOS app embeds it as a resource).
+    public static func loadFromMainBundle() -> [Game] {
+        guard let url = Bundle.main.url(forResource: "seed-catalog", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            return []
+        }
+        return CoreJSON.decodeGames(data)
+    }
+}
+
+public enum CoreJSON {
+    public static func decodeGames(_ data: Data) -> [Game] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return (try? decoder.decode([Game].self, from: data)) ?? []
+    }
+}

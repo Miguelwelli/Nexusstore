@@ -93,6 +93,8 @@ public extension Game {
     var downloadURL: URL? { HTTPSURLValidator.url(from: downloadURLString) }
     var coverURL: URL? { HTTPSURLValidator.url(from: coverURLString) }
     var bannerURL: URL? { HTTPSURLValidator.url(from: bannerURLString) }
+    var coverArtwork: ArtworkReference { ArtworkReference(rawValue: coverURLString) }
+    var bannerArtwork: ArtworkReference { ArtworkReference(rawValue: bannerURLString) }
 
     /// Categories resolved against the built-in catalog. Unknown raw values are ignored.
     var resolvedCategories: [GameCategory] {
@@ -110,6 +112,30 @@ public extension Game {
     var searchableText: String {
         SearchText.fold([name, description, developer, publisher, platformTag]
             .joined(separator: " ") + " " + categoryLine)
+    }
+
+    /// File name used on the console. Falls back to a slug of the name plus the .pkg extension.
+    var remotePackageName: String {
+        if let url = downloadURL {
+            return HTTPSURLValidator.suggestedFileName(for: url, fallback: Self.slug(name) + ".pkg")
+        }
+        return Self.slug(name) + ".pkg"
+    }
+
+    static func slug(_ value: String) -> String {
+        let folded = value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789-")
+        var output = ""
+        for character in folded.unicodeScalars {
+            if allowed.contains(character) {
+                output.unicodeScalars.append(character)
+            } else if !output.hasSuffix("-") {
+                output.append("-")
+            }
+        }
+        return output.trimmingCharacters(in: CharacterSet(charactersIn: "-"))
     }
 
     var ratingText: String {
@@ -201,12 +227,12 @@ public struct GameDraft: Equatable, Sendable {
             errors[.downloadURL] = HTTPSURLValidator.validate(downloadURLString, requiringPKG: true)?.message
         }
 
-        // Artwork is mandatory for a store-like look, but we accept any https image link.
-        if !coverURLString.isEmpty, let error = HTTPSURLValidator.validate(coverURLString, requiringPKG: false) {
-            errors[.cover] = error.message
+        // Artwork may be a https URL or the name of a bundled asset (demo catalog).
+        if !coverURLString.isEmpty, !ArtworkReference(rawValue: coverURLString).isValid {
+            errors[.cover] = "Capa inválida. Use um link HTTPS de imagem."
         }
-        if !bannerURLString.isEmpty, let error = HTTPSURLValidator.validate(bannerURLString, requiringPKG: false) {
-            errors[.banner] = error.message
+        if !bannerURLString.isEmpty, !ArtworkReference(rawValue: bannerURLString).isValid {
+            errors[.banner] = "Banner inválido. Use um link HTTPS de imagem."
         }
 
         let trimmedVersion = version.trimmingCharacters(in: .whitespacesAndNewlines)
