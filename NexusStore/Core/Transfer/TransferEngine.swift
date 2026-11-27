@@ -43,10 +43,13 @@ public protocol TransferNetworking: Sendable {
 /// Design notes:
 /// - One job runs at a time. Wi-Fi is a shared resource and the PS4-side FTP servers are usually
 ///   single-connection, so parallel transfers would only slow each other down.
-/// - All state transitions happen on an internal serial queue; the public API is thread-safe.
-/// - Pause is only offered while **downloading** (the remote file supports HTTP Range). Once the
-///   upload to the console started, the job can only be cancelled — FTP has no portable resume
-///   guarantee, and pretending otherwise would risk a corrupt package on the console.
+/// - Threading model: all mutable engine state is guarded by `lock`. Long-running work (download +
+///   FTP dialogue) happens on a dedicated serial `workQueue`, one job at a time, which makes the
+///   queue strictly sequential without ever blocking the caller. Callbacks from the network are
+///   answered from the lock, never by re-entering the work queue (that would deadlock).
+/// - Pause is only offered while **downloading** (HTTP Range supports it). Once the upload to the
+///   console started, the job can only be cancelled — FTP has no portable resume guarantee, and
+///   pretending otherwise could leave a corrupt package on the console.
 public final class TransferEngine: @unchecked Sendable {
 
     public typealias EventHandler = @Sendable (UUID, TransferEvent) -> Void
@@ -55,18 +58,20 @@ public final class TransferEngine: @unchecked Sendable {
     private let networking: TransferNetworking
     private let ftpProvider: FTPSocketProvider
     private let configuration: TransferConfiguration
-    private let queue = DispatchQueue(label: "com.nexusstore.transfer.engine")
     private let fileManager: FileManager
 
+    private let lock = NSLock()
     private var pendingJobs: [TransferJob] = []
     private var activeJob: TransferJob?
     private var cancelRequested = false
     private var pauseRequested = false
     private var eventHandler: EventHandler?
-    private var _currentSpeed: Double = 0
-    private var _remainingSeconds: Double?
-    private var _phase: TransferPhase = .idle
-    private var _startedAt: Date?
+    private var currentSpeed: Double = 0
+    private var remainingSeconds: Double?
+    private var phase: TransferPhase = .idle
+    private var activeStartedAt: Date?
+
+    private let workQueue = DispatchQueue(label: "com.nexusstore.transfer.engine", qos: .utility)
 
     public init(
         workingDirectory: URL,
@@ -83,89 +88,111 @@ public final class TransferEngine: @unchecked Sendable {
         try? fileManager.createDirectory(at: workingDirectory, withIntermediateDirectories: true)
     }
 
+    // MARK: - Observation
+
     /// Registers the observer used to push UI updates.
     public func setEventHandler(_ handler: @escaping EventHandler) {
-        queue.sync { eventHandler = handler }
+        lock.lock(); eventHandler = handler; lock.unlock()
     }
 
     public var currentJob: TransferJob? {
-        queue.sync { activeJob ?? pendingJobs.first }
+        lock.lock(); defer { lock.unlock() }
+        return activeJob ?? pendingJobs.first
     }
 
     /// Latest measured speed in bytes/second (updated ~every 2 s during upload).
-    public var currentSpeed: Double { queue.sync { _currentSpeed } }
+    public var currentSpeedBytesPerSecond: Double {
+        lock.lock(); defer { lock.unlock() }
+        return currentSpeed
+    }
 
     /// Latest remaining-time estimate in seconds.
-    public var remainingSeconds: Double? { queue.sync { _remainingSeconds } }
+    public var estimatedRemainingSeconds: Double? {
+        lock.lock(); defer { lock.unlock() }
+        return remainingSeconds
+    }
 
     /// Coarse phase used by the UI to show "Baixando" vs "Transferindo".
-    public var phase: TransferPhase { queue.sync { _phase } }
+    public var currentPhase: TransferPhase {
+        lock.lock(); defer { lock.unlock() }
+        return phase
+    }
 
-    public var startedAt: Date? { queue.sync { _startedAt } }
+    public var startedAt: Date? {
+        lock.lock(); defer { lock.unlock() }
+        return activeStartedAt
+    }
 
     public var queuedCount: Int {
-        queue.sync { pendingJobs.count + (activeJob == nil ? 0 : 0) }
+        lock.lock(); defer { lock.unlock() }
+        return pendingJobs.count
+    }
+
+    public var isBusy: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return activeJob != nil
     }
 
     // MARK: - Public API
 
-    /// Adds a job and starts it if the engine is idle.
+    /// Adds a job to the end of the queue and starts it when the engine is idle.
     public func enqueue(_ job: TransferJob) {
-        queue.async { [weak self] in
-            guard let self else { return }
-            self._currentSpeed = 0
-            self._remainingSeconds = nil
-            self.pendingJobs.append(job)
-            self.emit(job.id, .state(.queued, message: "Na fila de transferência"))
-            self.startNextIfIdle()
+        lock.lock()
+        currentSpeed = 0
+        remainingSeconds = nil
+        pendingJobs.append(job)
+        lock.unlock()
+        emit(job.id, .state(.queued, message: "Na fila de transferência"))
+        workQueue.async { [weak self] in
+            self?.runNext()
         }
     }
 
-    /// Requests a cooperative pause (download phase only).
+    /// Requests a cooperative pause (download phase only). No-op otherwise.
     public func pause() {
-        queue.async { [weak self] in
-            guard let self, self.activeJob?.state == .downloading else { return }
-            self.pauseRequested = true
-        }
+        lock.lock()
+        guard activeJob?.state == .downloading else { lock.unlock(); return }
+        pauseRequested = true
+        lock.unlock()
     }
 
     /// Cancels the active job (or removes a queued one).
     public func cancel(jobID: UUID) {
-        queue.async { [weak self] in
-            guard let self else { return }
-            if self.activeJob?.id == jobID {
-                self.cancelRequested = true
-            } else if let index = self.pendingJobs.firstIndex(where: { $0.id == jobID }) {
-                let job = self.pendingJobs.remove(at: index)
-                var cancelled = job
-                cancelled.state = .cancelled
-                cancelled.message = "Removida da fila."
-                self.emit(job.id, .finished(cancelled))
-            }
+        lock.lock()
+        if activeJob?.id == jobID {
+            cancelRequested = true
+            lock.unlock()
+            return
         }
+        if let index = pendingJobs.firstIndex(where: { $0.id == jobID }) {
+            var job = pendingJobs.remove(at: index)
+            lock.unlock()
+            job.state = .cancelled
+            job.message = "Removida da fila."
+            emit(job.id, .finished(job))
+            emitState(job.id, .cancelled, job.message)
+            return
+        }
+        lock.unlock()
     }
 
     /// Cancels everything and clears the queue (used when the user leaves the PS4 area).
     public func cancelAll() {
-        queue.async { [weak self] in
-            guard let self else { return }
-            self.cancelRequested = true
-            for job in self.pendingJobs {
-                var cancelled = job
-                cancelled.state = .cancelled
-                cancelled.message = "Fila esvaziada."
-                self.emit(job.id, .finished(cancelled))
-            }
-            self.pendingJobs.removeAll()
+        lock.lock()
+        cancelRequested = true
+        let queued = pendingJobs
+        pendingJobs.removeAll()
+        lock.unlock()
+        for var job in queued {
+            job.state = .cancelled
+            job.message = "Fila esvaziada."
+            emit(job.id, .finished(job))
         }
     }
 
-    /// Deletes a completed/aborted job's temporary file.
+    /// Deletes a job's temporary file.
     public func discardTemporaryFile(for job: TransferJob) {
-        queue.async { [weak self] in
-            guard let self else { return }
-            try? self.fileManager.removeItem(at: self.localURL(for: job))
-        }
+        try? fileManager.removeItem(at: localURL(for: job))
     }
 
     /// Path of the temporary .pkg for a job (exposed for tests/debug screens).
@@ -173,26 +200,35 @@ public final class TransferEngine: @unchecked Sendable {
         workingDirectory.appendingPathComponent("\(job.id.uuidString).pkg")
     }
 
-    // MARK: - Runner
+    // MARK: - Runner (workQueue only)
 
-    private func startNextIfIdle() {
-        guard activeJob == nil, let next = pendingJobs.first else { return }
-        pendingJobs.removeFirst()
-        _currentSpeed = 0
-        _remainingSeconds = nil
-        _startedAt = Date()
-        var job = next
+    private func runNext() {
+        lock.lock()
+        guard activeJob == nil, !pendingJobs.isEmpty else {
+            lock.unlock()
+            return
+        }
+        var job = pendingJobs.removeFirst()
         job.state = .preparing
         job.startedAt = job.startedAt ?? Date()
         activeJob = job
         cancelRequested = false
         pauseRequested = false
-        emit(job.id, .state(.preparing, message: "Preparando transferência…"))
+        currentSpeed = 0
+        remainingSeconds = nil
+        activeStartedAt = Date()
+        lock.unlock()
 
+        emit(job.id, .state(.preparing, message: "Preparando transferência…"))
         let result = run(job)
+
+        lock.lock()
         activeJob = nil
+        activeStartedAt = nil
+        lock.unlock()
+
         emit(result.job.id, .finished(result.job))
-        startNextIfIdle()
+        runNext()
     }
 
     private func run(_ job: TransferJob) -> TransferResult {
@@ -203,6 +239,7 @@ public final class TransferEngine: @unchecked Sendable {
             job.state = .failed
             job.finishedAt = Date()
             job.message = "O link do jogo não é um endereço HTTPS válido. Atualize o cadastro no painel administrativo."
+            emitState(job.id, .failed, job.message)
             return TransferResult(job: job, error: .localFile(job.message))
         }
 
@@ -211,34 +248,35 @@ public final class TransferEngine: @unchecked Sendable {
             let localURL = localURL(for: job)
             let existing = Self.fileSize(at: localURL)
             job.state = .downloading
-            emit(job.id, .state(.downloading, message: existing > 0 ? "Retomando download…" : "Baixando arquivo PKG…"))
+            emitState(job.id, .downloading, existing > 0 ? "Retomando download…" : "Baixando arquivo PKG…")
             let total = networking.fileSize(for: sourceURL) ?? job.expectedTotalBytes
             if total > 0, job.expectedTotalBytes != total {
                 job.expectedTotalBytes = total
             }
+            let jobID = job.id
             let downloaded = try networking.download(
                 from: sourceURL,
                 to: localURL,
                 resumeFromByte: existing,
-                progress: { [weak self, jobID = job.id] written, reported in
+                progress: { [weak self] written, reported in
                     guard let self else { return }
                     let knownTotal = reported > 0 ? reported : max(total, written)
                     self.emit(jobID, .downloadProgress(downloaded: written, total: knownTotal))
                 },
                 isCancelled: { [weak self] in
                     guard let self else { return true }
-                    return self.queue.sync { self.cancelRequested || self.pauseRequested }
+                    return self.isCancellationOrPauseRequested
                 }
             )
 
-            if queue.sync(execute: { pauseRequested }) {
+            if isPauseRequested {
                 job.downloadedBytes = downloaded
                 job.state = .paused
                 job.message = "Download pausado (\(ByteFormatting.formatSize(downloaded)) baixados)."
-                emit(job.id, .state(.paused, message: job.message))
+                emitState(job.id, .paused, job.message)
                 return TransferResult(job: job, error: nil)
             }
-            if queue.sync(execute: { cancelRequested }) {
+            if isCancelRequested {
                 throw FTPError.cancelled
             }
 
@@ -250,7 +288,7 @@ public final class TransferEngine: @unchecked Sendable {
 
             // 3. Upload to the console.
             job.state = .connecting
-            emit(job.id, .state(.connecting, message: "Conectando ao console…"))
+            emitState(job.id, .connecting, "Conectando ao console…")
             let client = FTPClient(provider: ftpProvider)
             try client.connectAndLogin(
                 host: job.consoleHost,
@@ -264,7 +302,7 @@ public final class TransferEngine: @unchecked Sendable {
             }
 
             job.state = .transferring
-            emit(job.id, .state(.transferring, message: "Enviando para \(job.consoleName)…"))
+            emitState(job.id, .transferring, "Enviando para \(job.consoleName)…")
             let uploadResult = try uploadWithMetrics(client: client, job: job, localURL: localURL)
 
             // 4. Optional verification, only when the server actually implements SIZE.
@@ -282,7 +320,7 @@ public final class TransferEngine: @unchecked Sendable {
             job.state = .completed
             job.finishedAt = Date()
             job.message = "Envio concluído com sucesso."
-            emit(job.id, .state(.completed, message: job.message))
+            emitState(job.id, .completed, job.message)
 
             if configuration.deleteLocalFileWhenDone {
                 try? fileManager.removeItem(at: localURL)
@@ -303,18 +341,18 @@ public final class TransferEngine: @unchecked Sendable {
                     try? fileManager.removeItem(at: localURL(for: job))
                 }
             }
-            emit(job.id, .state(job.state, message: job.message))
+            emitState(job.id, job.state, job.message)
             return TransferResult(job: job, error: error)
         } catch {
             job.finishedAt = Date()
             job.state = .failed
             job.message = error.localizedDescription
-            emit(job.id, .state(.failed, message: job.message))
+            emitState(job.id, .failed, job.message)
             return TransferResult(job: job, error: .localFile(error.localizedDescription))
         }
     }
 
-    /// Uploads while measuring speed over a 2-second sliding window.
+    /// Uploads while measuring speed over a ~2 s sliding window.
     private func uploadWithMetrics(client: FTPClient, job: TransferJob, localURL: URL) throws -> Int64 {
         var windowStart = Date()
         var windowBytes: Int64 = 0
@@ -328,7 +366,6 @@ public final class TransferEngine: @unchecked Sendable {
                 guard let self else { return }
                 self.emit(job.id, .uploadProgress(uploaded: sent, total: total))
                 let now = Date()
-                windowBytes = sent
                 let elapsed = now.timeIntervalSince(windowStart)
                 if elapsed >= 2.0 {
                     let speed = Double(windowBytes) / elapsed
@@ -344,25 +381,53 @@ public final class TransferEngine: @unchecked Sendable {
                     self.emit(job.id, .speed(bytesPerSecond: average, remainingSeconds: remaining))
                     lastReport = now
                 }
+                windowBytes = sent
             },
             isCancelled: { [weak self] in
                 guard let self else { return true }
-                return self.queue.sync { self.cancelRequested }
+                return self.isCancelRequested
             }
         )
     }
 
+    // MARK: - Flags
+
+    private var isCancellationOrPauseRequested: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return cancelRequested || pauseRequested
+    }
+
+    private var isCancelRequested: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return cancelRequested
+    }
+
+    private var isPauseRequested: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return pauseRequested
+    }
+
+    // MARK: - Emission
+
+    private func emitState(_ id: UUID, _ state: TransferJob.State, _ message: String) {
+        emit(id, .state(state, message))
+    }
+
     private func emit(_ id: UUID, _ event: TransferEvent) {
-        if case let .speed(bytes, remaining) = event {
-            _currentSpeed = bytes
-            _remainingSeconds = remaining
+        lock.lock()
+        switch event {
+        case let .speed(bytes, remaining):
+            currentSpeed = bytes
+            remainingSeconds = remaining
+        case let .state(state, _):
+            phase = TransferPhase(state: state)
+            if state.isRunning, activeStartedAt == nil { activeStartedAt = Date() }
+            if state.isTerminal { activeStartedAt = nil }
+        default:
+            break
         }
-        if case let .state(state, _) = event {
-            _phase = TransferPhase(state: state)
-            if state.isRunning, _startedAt == nil { _startedAt = Date() }
-            if state.isTerminal { _startedAt = nil }
-        }
-        let handler = queue.sync { eventHandler }
+        let handler = eventHandler
+        lock.unlock()
         handler?(id, event)
     }
 
