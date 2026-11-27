@@ -23,6 +23,7 @@
 		C490E784A0C70C45938F031F /* AutoCatalogAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2E601A9DD62E3AB247325BF /* AutoCatalogAssistant.swift */; };
 		582A2CC0C828E1A842FE400D /* AutoCatalogModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC87104AB648F25E45B11D93 /* AutoCatalogModels.swift */; };
 		885773FA7DE7476156DFC100 /* AutoCatalogRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5808FF0BA06C416350A5DD4F /* AutoCatalogRepository.swift */; };
+		920436531F2A8F403D244CE6 /* CatalogIngestion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665BDC4D8161E30228FAD787 /* CatalogIngestion.swift */; };
 		E3F0A4D587666308FD870736 /* MetadataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AF34279FE4F136364FEE826 /* MetadataProvider.swift */; };
 		B8261659D6058E962796D30F /* PKGLinkVerifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF80A1903088EC9BEB2F5C01 /* PKGLinkVerifier.swift */; };
 		B6954BBE45F3A680BA06A7F8 /* RAWGMetadataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE42B31466FBACA2D07ED939 /* RAWGMetadataProvider.swift */; };
@@ -101,6 +102,7 @@
 		A2E601A9DD62E3AB247325BF /* AutoCatalogAssistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/AutoCatalogAssistant.swift; sourceTree = SOURCE_ROOT; };
 		EC87104AB648F25E45B11D93 /* AutoCatalogModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/AutoCatalogModels.swift; sourceTree = SOURCE_ROOT; };
 		5808FF0BA06C416350A5DD4F /* AutoCatalogRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/AutoCatalogRepository.swift; sourceTree = SOURCE_ROOT; };
+		665BDC4D8161E30228FAD787 /* CatalogIngestion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/CatalogIngestion.swift; sourceTree = SOURCE_ROOT; };
 		8AF34279FE4F136364FEE826 /* MetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/MetadataProvider.swift; sourceTree = SOURCE_ROOT; };
 		FF80A1903088EC9BEB2F5C01 /* PKGLinkVerifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/PKGLinkVerifier.swift; sourceTree = SOURCE_ROOT; };
 		AE42B31466FBACA2D07ED939 /* RAWGMetadataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Metadata/RAWGMetadataProvider.swift; sourceTree = SOURCE_ROOT; };
@@ -246,6 +248,7 @@
 				A2E601A9DD62E3AB247325BF /* AutoCatalogAssistant.swift */,
 				EC87104AB648F25E45B11D93 /* AutoCatalogModels.swift */,
 				5808FF0BA06C416350A5DD4F /* AutoCatalogRepository.swift */,
+				665BDC4D8161E30228FAD787 /* CatalogIngestion.swift */,
 				8AF34279FE4F136364FEE826 /* MetadataProvider.swift */,
 				FF80A1903088EC9BEB2F5C01 /* PKGLinkVerifier.swift */,
 				AE42B31466FBACA2D07ED939 /* RAWGMetadataProvider.swift */,
@@ -524,6 +527,7 @@
 				C490E784A0C70C45938F031F /* AutoCatalogAssistant.swift in Sources */,
 				582A2CC0C828E1A842FE400D /* AutoCatalogModels.swift in Sources */,
 				885773FA7DE7476156DFC100 /* AutoCatalogRepository.swift in Sources */,
+				920436531F2A8F403D244CE6 /* CatalogIngestion.swift in Sources */,
 				E3F0A4D587666308FD870736 /* MetadataProvider.swift in Sources */,
 				B8261659D6058E962796D30F /* PKGLinkVerifier.swift in Sources */,
 				B6954BBE45F3A680BA06A7F8 /* RAWGMetadataProvider.swift in Sources */,
