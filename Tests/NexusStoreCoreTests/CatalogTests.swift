@@ -48,7 +48,7 @@ final class GameDraftValidationTests: XCTestCase {
         let game = draft.makeGame()
         XCTAssertEqual(game.name, "Bloodborne")
         XCTAssertEqual(game.tags, ["1 Jogador", "PT-BR", "HDR"])
-        XCTAssertEqual(game.byteCount, 52_065_992_704)
+        XCTAssertEqual(game.byteCount, 52_076_478_464)
     }
 
     func testEditingKeepsIdentityAndCreationDate() {

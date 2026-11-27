@@ -93,6 +93,7 @@ final class FTPClientTests: XCTestCase {
 
         let control = server([
             "220 ready",
+            "200 Type set to I",
             "227 Entering Passive Mode (192,168,1,104,196,52)",
             "150 Opening data connection",
             "226 Transfer complete"

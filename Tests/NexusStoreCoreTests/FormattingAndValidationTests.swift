@@ -4,9 +4,9 @@ import XCTest
 final class ByteFormattingTests: XCTestCase {
 
     func testParsesGigabytesWithDotAndComma() {
-        XCTAssertEqual(ByteFormatting.parseSize("48.5 GB"), 52_065_992_704)
-        XCTAssertEqual(ByteFormatting.parseSize("48,5 gb"), 52_065_992_704)
-        XCTAssertEqual(ByteFormatting.parseSize("48.5GB"), 52_065_992_704)
+        XCTAssertEqual(ByteFormatting.parseSize("48.5 GB"), 52_076_478_464)
+        XCTAssertEqual(ByteFormatting.parseSize("48,5 gb"), 52_076_478_464)
+        XCTAssertEqual(ByteFormatting.parseSize("48.5GB"), 52_076_478_464)
         XCTAssertEqual(ByteFormatting.parseSize("  1 TB "), 1_099_511_627_776)
     }
 
@@ -24,7 +24,7 @@ final class ByteFormattingTests: XCTestCase {
     }
 
     func testFormatting() {
-        XCTAssertEqual(ByteFormatting.formatSize(52_065_992_704), "48.5 GB")
+        XCTAssertEqual(ByteFormatting.formatSize(52_076_478_464), "48.5 GB")
         XCTAssertEqual(ByteFormatting.formatSize(943_718_400), "900.0 MB")
         XCTAssertEqual(ByteFormatting.formatSize(0), "—")
     }

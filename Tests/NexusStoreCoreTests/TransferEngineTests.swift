@@ -81,7 +81,14 @@ final class TransferEngineTests: XCTestCase {
         let networking = FakeNetworking(payload: payload, reportedSize: Int64(payload.count))
 
         // 1 control socket for the engine's FTP session + 1 data socket.
-        let control = ScriptedSocket(responses: ["220 ready\r\n", "227 Entering Passive Mode (127,0,0,1,196,52)\r\n", "150 go\r\n", "226 done\r\n"])
+        let control = ScriptedSocket(responses: [
+            "220 ready\r\n",
+            "215 UNIX Type: L8\r\n",                                  // SYST
+            "200 Type set to I\r\n",                                   // TYPE I
+            "227 Entering Passive Mode (127,0,0,1,196,52)\r\n",        // PASV
+            "150 go\r\n",                                              // STOR accepted
+            "226 done\r\n"                                             // STOR finished
+        ])
         let data = ScriptedSocket(responses: [])
         let provider = ScriptedProvider([control, data])
 
