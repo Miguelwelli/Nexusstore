@@ -19,7 +19,7 @@
 | Página individual do jogo com metadados e ações | ✅ Implementado |
 | Painel administrativo protegido por senha (SHA-256 + salt) | ✅ Implementado |
 | Cadastro/edição/exclusão de jogos com validação campo a campo | ✅ Implementado |
-| Assistente IA — Auto-Catálogo (busca real de metadados, revisão, cadastro em lote) | ✅ Implementado |
+| Assistente IA — Auto-Catálogo (RAWG ou Gemini + Google Search, revisão, cadastro em lote) | ✅ Implementado |
 | Descoberta automática do PS4 na rede local (protocolo DDP real, UDP 987) | ✅ Implementado |
 | Conexão FTP real (login testado de verdade, sem simulação) | ✅ Implementado |
 | Configuração manual do console (IP/porta/usuário/caminho) | ✅ Implementado |
@@ -231,7 +231,7 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 - Central de transferência com porcentagem, barra, velocidade, tempo restante, bytes enviados,
   estados (preparando, baixando, conectando, transferindo, pausado, concluído, erro) e cancelamento.
 - Limpeza de temporários, verificação de espaço livre antes do download, retomada por `Range`.
-- 101 testes automatizados + integração com servidor FTP real.
+- 116 testes automatizados + integração com servidor FTP real.
 
 ### Pendências / necessitam de ambiente macOS ou do console
 
@@ -297,7 +297,7 @@ para quem tiver runners macOS — ele ainda precisaria ser assinado com o seu ce
 ## Verificação rápida do repositório
 
 ```bash
-swift test                        # núcleo: 101 testes
+swift test                        # núcleo: 116 testes
 python3 Tools/verify_xcodeproj.py # .xcodeproj sincronizado
 python3 Tools/check_swift_style.py
 python3 Tools/check_workflows.py

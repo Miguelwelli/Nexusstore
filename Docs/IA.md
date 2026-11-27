@@ -9,7 +9,41 @@ Painel Administrativo → Assistente IA — Auto-Catálogo
 
 ---
 
-## 1. Decisão de arquitetura: por que a busca não usa Gemini
+## 0. Dois provedores, selecionáveis na tela
+
+O assistente aceita **duas fontes**, e a escolha é do administrador no seletor "Modelo de IA":
+
+| Provedor | Chave | O que entrega | Limite honesto |
+|---|---|---|---|
+| **RAWG** | `rawg.io/apikey` (grátis) | Ficha estruturada: título, capa, gêneros, publisher, página de origem | Não informa tamanho de `.pkg` |
+| **Gemini + Pesquisa Google** | `aistudio.google.com/apikey` (começa com `AIza`) | Pesquisa na web de verdade, com citações; cobertura maior de títulos | Só aceita jogo com citação; tamanho só se vier citado |
+
+As chaves ficam em **itens separados do Keychain** (`rawg-api-key` e `gemini-api-key`), então trocar de
+provedor não exige digitar a chave de novo.
+
+### Como o Gemini é usado (e o que ele não pode fazer)
+
+A chamada é real: `POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
+com `headers: x-goog-api-key`, `tools: [{"google_search": {}}]` e
+`generationConfig.responseMimeType = application/json` + `responseSchema`.
+
+Regras de honestidade aplicadas no parser (`GeminiMetadataProvider.parse`):
+
+1. **Sem citação, não entra.** Cada jogo precisa de uma `sourceURL` que apareça em
+   `groundingMetadata.groundingChunks[].web.uri`. Se o modelo respondeu de memória, o item é
+   descartado e contado em "ignorados" — nunca apresentado como pesquisado.
+2. **Tamanho só com fonte.** `packageSize` é mantido apenas se for um tamanho parseável
+   (`ByteFormatting.parseSize`); caso contrário fica vazio e a revisão pede preenchimento.
+3. **Nenhum `.pkg` é gerado.** O prompt proíbe, e o campo só aceita link do administrador, que passa
+   por `PKGLinkVerifier`.
+4. **Modelo configurável** (`gemini-3.5-flash` por padrão; a lista inclui `gemini-2.5-flash` e
+   `gemini-2.0-flash`, todas com suporte a `google_search` segundo a documentação do Google).
+
+Risco que continua existindo e está documentado: a chave viaja do app para o Google (é a chave do
+próprio administrador, guardada no Keychain). Uma função de nuvem intermediária eliminaria isso, mas
+também exigiria hospedagem — está no item 6 como próximo passo.
+
+## 1. Por que a RAWG continua sendo o padrão
 
 O pedido original era integrar a **Google Gemini API** e ter a IA pesquisando jogos. Há um conflito
 técnico real que precisa ser dito com clareza:
@@ -37,8 +71,8 @@ proibido. Por isso:
   guardando a chave, com o app enviando apenas texto. Isso está descrito no item 6 como próximo passo,
   não implementado.
 
-O rótulo "Modelo de IA" na tela lista o provedor efetivamente usado (RAWG) — não um modelo Gemini
-fictício. Se uma camada Gemini for adicionada, ela aparece nesse seletor.
+O seletor mostra exatamente os provedores implementados. Nenhum nome de modelo fictício aparece na
+interface.
 
 ## 2. Fluxo implementado
 
@@ -105,12 +139,13 @@ devolve JSON no formato da RAWG:
 - aprovação real em `CatalogRepository`, dupla aprovação recusada, *aprovar todos* pulando incompletos;
 - histórico persistido, limitado e com rejeição preservada.
 
-## 6. Próximo passo (não implementado)
+## 6. Próximos passos (não implementados)
 
-Camada Gemini para **texto** (descrição em português, tags), com:
-
-1. função de nuvem guardando a chave do Google;
-2. o app envia apenas o título do jogo e recebe texto;
-3. o texto entra numa proposta de descrição e continua exigindo aprovação humana.
+1. **Função de nuvem** para as duas chaves (Cloud Functions/Worker). Hoje elas ficam no Keychain do
+   próprio aparelho, o que é aceitável para uso pessoal, mas não para distribuição em escala.
+2. **Enriquecimento cruzado**: usar RAWG para a ficha e Gemini apenas para descrição em português,
+   sempre com o texto marcado como gerado e sujeito a aprovação.
+3. **Fonte de imagens própria**: hoje capa e banner vêm do provedor; um cache local evitaria links
+   quebrados quando a fonte remove a imagem.
 
 Nada disso foi feito, e o app não finge que foi.
