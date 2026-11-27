@@ -58,6 +58,7 @@ struct AutoCatalogReviewView: View {
                 CandidateEditorView(
                     candidate: candidate,
                     catalog: catalog,
+                    assistant: assistant,
                     onSave: { updated in
                         assistant.update(candidate: updated, in: searchID)
                         toast = "Alterações salvas em “\(updated.title)”"

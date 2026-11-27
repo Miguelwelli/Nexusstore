@@ -6,6 +6,7 @@ import UIKit
 struct CandidateEditorView: View {
     let candidate: CatalogCandidate
     @ObservedObject var catalog: CatalogStore
+    @ObservedObject var assistant: AutoCatalogStore
 
     let onSave: (CatalogCandidate) -> Void
     let onReject: () -> Void
@@ -20,11 +21,13 @@ struct CandidateEditorView: View {
     init(
         candidate: CatalogCandidate,
         catalog: CatalogStore,
+        assistant: AutoCatalogStore,
         onSave: @escaping (CatalogCandidate) -> Void,
         onReject: @escaping () -> Void
     ) {
         self.candidate = candidate
         self.catalog = catalog
+        self.assistant = assistant
         self.onSave = onSave
         self.onReject = onReject
         _draft = State(initialValue: candidate)
@@ -253,6 +256,10 @@ struct CandidateEditorView: View {
         let status = await PKGLinkVerifier().verify(draft.downloadURLString)
         draft.pkgStatus = status
         linkMessage = status.detail
+        if status.isVerified {
+            // Remember the authorized source so the next search reuses it for this title.
+            assistant.setPKGLink(draft.downloadURLString, forTitle: draft.title)
+        }
         UINotificationFeedbackGenerator().notificationOccurred(status.isVerified ? .success : .error)
     }
 

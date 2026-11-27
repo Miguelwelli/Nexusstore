@@ -82,8 +82,9 @@ public struct AutoCatalogAssistant: Sendable {
 
     /// Maps provider genres onto the store's categories, falling back to the requested ones.
     public static func mapCategories(_ genres: [String], requested: [String]) -> [String] {
+        // Keywords are matched against RAWG genre names *and* slugs (both are passed in), plus tags.
         let rules: [(String, [String])] = [
-            ("acao", ["action", "shooter", "fighting", "platformer"]),
+            ("acao", ["action"]),
             ("aventura", ["adventure"]),
             ("rpg", ["rpg", "role-playing"]),
             ("tiro", ["shooter", "fps"]),
@@ -94,8 +95,8 @@ public struct AutoCatalogAssistant: Sendable {
             ("estrategia", ["strategy"]),
             ("simulacao", ["simulation"]),
             ("luta", ["fighting"]),
-            ("familia", ["family", "puzzle", "party"]),
-            ("soulslike", ["souls-like", "soulslike"])
+            ("familia", ["family", "party"]),
+            ("soulslike", ["souls", "souls-like"])
         ]
         let lowered = genres.map { $0.lowercased() }
         var matched: [String] = []

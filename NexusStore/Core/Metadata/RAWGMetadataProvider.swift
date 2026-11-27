@@ -46,6 +46,7 @@ public struct RAWGMetadataProvider: MetadataProvider {
             throw MetadataProviderError.missingCredential
         }
         let genres = Self.genreSlugs(for: query.categories)
+        let tags = Self.tagSlugs(for: query.categories)
         var collected: [MetadataCandidate] = []
         var seen = Set(query.excludedTitles.map(TitleNormalizer.normalize))
         // Distinct titles dropped as duplicates. A Set, not a counter: paging can return the same
@@ -66,10 +67,22 @@ public struct RAWGMetadataProvider: MetadataProvider {
             if !genres.isEmpty {
                 items.append(URLQueryItem(name: "genres", value: genres.joined(separator: ",")))
             }
+            if !tags.isEmpty {
+                items.append(URLQueryItem(name: "tags", value: tags.joined(separator: ",")))
+            }
             if !query.searchTerms.trimmingCharacters(in: .whitespaces).isEmpty {
                 items.append(URLQueryItem(name: "search", value: query.searchTerms))
             }
-            let json = try await get(path: "/games", query: items)
+            let json: [String: Any]
+            do {
+                json = try await get(path: "/games", query: items)
+            } catch let error as RequestError where error.status == 400 && !genres.isEmpty {
+                // RAWG rejects an unknown genre/tag slug with HTTP 400. Rather than failing the whole
+                // search (and rather than guessing), retry without the taxonomy filters: category
+                // mapping still happens locally from each game's genres.
+                let fallback = items.filter { $0.name != "genres" && $0.name != "tags" }
+                json = try await get(path: "/games", query: fallback)
+            }
             guard let results = json["results"] as? [[String: Any]] else {
                 throw MetadataProviderError.invalidResponse
             }
@@ -102,7 +115,8 @@ public struct RAWGMetadataProvider: MetadataProvider {
         let background = (result["background_image"] as? String) ?? ""
         let extra = result["background_image_additional"] as? String ?? ""
 
-        let genres = (result["genres"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
+        let genreNames = (result["genres"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
+        let genreSlugs = (result["genres"] as? [[String: Any]] ?? []).compactMap { $0["slug"] as? String }
         let tags = (result["tags"] as? [[String: Any]] ?? []).compactMap { $0["name"] as? String }
         let platforms = (result["platforms"] as? [[String: Any]] ?? []).compactMap { entry -> String? in
             guard let platform = entry["platform"] as? [String: Any],
@@ -122,7 +136,7 @@ public struct RAWGMetadataProvider: MetadataProvider {
             title: title,
             summary: Self.plainText(result["description_raw"] as? String ?? ""),
             releaseDate: Self.date(from: result["released"] as? String),
-            genres: genres,
+            genres: genreNames + genreSlugs,
             coverURLString: Self.https(background),
             bannerURLString: Self.https(extra),
             platforms: platforms.isEmpty ? ["PlayStation 4"] : platforms,
@@ -140,6 +154,11 @@ public struct RAWGMetadataProvider: MetadataProvider {
     }
 
     // MARK: - Helpers
+
+    /// Carries the raw status for cases the provider handles itself (400 -> retry without filters).
+    private struct RequestError: Error {
+        let status: Int
+    }
 
     private func get(path: String, query: [URLQueryItem]) async throws -> [String: Any] {
         var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
@@ -166,6 +185,8 @@ public struct RAWGMetadataProvider: MetadataProvider {
         case 429:
             let retry = http.value(forHTTPHeaderField: "Retry-After").flatMap(Int.init)
             throw MetadataProviderError.rateLimited(retryAfter: retry)
+        case 400:
+            throw RequestError(status: 400)
         default:
             throw MetadataProviderError.server(status: http.statusCode)
         }
@@ -206,24 +227,38 @@ public struct RAWGMetadataProvider: MetadataProvider {
     /// Lowercased, accent-free, punctuation-free title used for duplicate detection.
     static func normalizedTitle(_ raw: String) -> String { TitleNormalizer.normalize(raw) }
 
-    /// Maps Nexus Store category raw values to RAWG genre slugs.
+    /// Maps Nexus Store categories to RAWG **genre** slugs.
+    ///
+    /// Slugs follow RAWG's published taxonomy (`role-playing-games-rpg`, not `rpg`). Genres that RAWG
+    /// does not model as genres (horror, open world, souls-like) are handled by `tagSlugs` instead.
     public static func genreSlugs(for categories: [String]) -> [String] {
         var slugs: [String] = []
         for category in categories {
             switch category {
-            case "acao": slugs.append(contentsOf: ["action"])
-            case "aventura": slugs.append(contentsOf: ["adventure"])
-            case "rpg": slugs.append(contentsOf: ["rpg"])
-            case "tiro": slugs.append(contentsOf: ["shooter"])
-            case "mundo-aberto": slugs.append(contentsOf: ["open-world"])
-            case "esportes": slugs.append(contentsOf: ["sports"])
-            case "corrida": slugs.append(contentsOf: ["racing"])
-            case "terror": slugs.append(contentsOf: ["horror"])
-            case "estrategia": slugs.append(contentsOf: ["strategy"])
-            case "simulacao": slugs.append(contentsOf: ["simulation"])
-            case "luta": slugs.append(contentsOf: ["fighting"])
-            case "familia": slugs.append(contentsOf: ["family", "puzzle"])
-            case "soulslike": slugs.append(contentsOf: ["action", "rpg"])
+            case "acao", "soulslike": slugs.append("action")
+            case "aventura": slugs.append("adventure")
+            case "rpg": slugs.append("role-playing-games-rpg")
+            case "tiro": slugs.append("shooter")
+            case "esportes": slugs.append("sports")
+            case "corrida": slugs.append("racing")
+            case "estrategia": slugs.append("strategy")
+            case "simulacao": slugs.append("simulation")
+            case "luta": slugs.append("fighting")
+            case "familia": slugs.append("family")
+            default: break
+            }
+        }
+        return Array(Set(slugs)).sorted()
+    }
+
+    /// Categories RAWG exposes as tags rather than genres.
+    public static func tagSlugs(for categories: [String]) -> [String] {
+        var slugs: [String] = []
+        for category in categories {
+            switch category {
+            case "terror": slugs.append("horror")
+            case "mundo-aberto": slugs.append("open-world")
+            case "soulslike": slugs.append("souls-like")
             default: break
             }
         }

@@ -173,6 +173,30 @@ final class AutoCatalogTests: XCTestCase {
         XCTAssertTrue(Stub.requestedURLs[0].query!.contains("platforms=18"))
     }
 
+    func testGenreSlugsUseThePublishedRAWGTaxonomy() {
+        XCTAssertEqual(RAWGMetadataProvider.genreSlugs(for: ["rpg"]), ["role-playing-games-rpg"])
+        XCTAssertEqual(RAWGMetadataProvider.genreSlugs(for: ["tiro"]), ["shooter"])
+        XCTAssertEqual(RAWGMetadataProvider.genreSlugs(for: ["acao", "soulslike"]), ["action"])
+        XCTAssertTrue(RAWGMetadataProvider.genreSlugs(for: ["terror"]).isEmpty)
+        XCTAssertEqual(RAWGMetadataProvider.tagSlugs(for: ["terror"]), ["horror"])
+        XCTAssertEqual(RAWGMetadataProvider.tagSlugs(for: ["mundo-aberto"]), ["open-world"])
+    }
+
+    func testRejectedTaxonomyFallsBackToUnfilteredQuery() async throws {
+        var calls: [URL] = []
+        Stub.handler = { request in
+            calls.append(request.url!)
+            if request.url!.query!.contains("genres=") {
+                return (400, [:], Data("{\"detail\":\"bad genre\"}".utf8))
+            }
+            return (200, ["Content-Type": "application/json"], self.rawgPayload)
+        }
+        let results = try await makeProvider().search(MetadataQuery(categories: ["rpg"], limit: 2))
+        XCTAssertEqual(calls.count, 2, "deve tentar de novo sem os filtros")
+        XCTAssertFalse(calls[1].query!.contains("genres="))
+        XCTAssertFalse(results.items.isEmpty)
+    }
+
     func testSearchDropsDuplicatesInsideTheSameResultSet() async throws {
         Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
         let response = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 5))
