@@ -3,7 +3,7 @@
 ## Como rodar
 
 ```bash
-swift test                                   # 79 testes (Core) — Linux e macOS
+swift test                                   # 101 testes (Core) — Linux e macOS
 python3 Tools/verify_xcodeproj.py            # projeto Xcode em sincronia com os fontes
 python3 Tools/check_swift_style.py           # guardas estruturais nos arquivos Swift
 ./Tools/ci/parse_all.sh $(find NexusStore Tests -name '*.swift')
@@ -106,10 +106,11 @@ swift test --filter FTPIntegrationTests
 
 ## Evidências do CI
 
-- `Swift core (build + tests)` — build + 79 testes: **sucesso**.
+- `Swift core (build + tests)` — build + 101 testes: **sucesso**.
 - `FTP integration (real server)` — 3 testes com pyftpdlib: **sucesso**.
-- `Tools/ci/parse_all.sh` — 56 arquivos Swift aprovados pelo parser do compilador.
-- `Swift core summary` (notice do CI): `Executed 79 tests, with 3 tests skipped and 0 failures`.
+- `Tools/ci/parse_all.sh` — 71 arquivos Swift aprovados pelo parser do compilador.
+- `Tools/check_workflows.py` — impede YAML inválido nos workflows (ver LIMITACOES).
+- `Swift core summary` (notice do CI): `Executed 101 tests, with 3 tests skipped and 0 failures`.
 
 > Logs completos ficam em **Actions → CI**. O acesso aos logs brutos via API é bloqueado neste
 > ambiente; os resultados foram lidos pelas *annotations* dos jobs (sucesso/falha por teste).

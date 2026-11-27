@@ -19,6 +19,7 @@
 | Página individual do jogo com metadados e ações | ✅ Implementado |
 | Painel administrativo protegido por senha (SHA-256 + salt) | ✅ Implementado |
 | Cadastro/edição/exclusão de jogos com validação campo a campo | ✅ Implementado |
+| Assistente IA — Auto-Catálogo (busca real de metadados, revisão, cadastro em lote) | ✅ Implementado |
 | Descoberta automática do PS4 na rede local (protocolo DDP real, UDP 987) | ✅ Implementado |
 | Conexão FTP real (login testado de verdade, sem simulação) | ✅ Implementado |
 | Configuração manual do console (IP/porta/usuário/caminho) | ✅ Implementado |
@@ -27,7 +28,7 @@
 | Central de transferência (porcentagem, velocidade, tempo restante, estados) | ✅ Implementado |
 | Instalador HTTP local do PS4 (porta 12800) e servidor HTTP no iPhone | ✅ Implementado (métodos alternativos) |
 | Build do app iOS | ⚠️ Código completo; compilação final precisa de Xcode (ver limitações) |
-| Testes do núcleo em Swift | ✅ 79 testes automatizados + integração FTP real |
+| Testes do núcleo em Swift | ✅ 101 testes automatizados + integração FTP real |
 
 > **Transparência:** este ambiente de desenvolvimento é Linux. O núcleo (catálogo, FTP, DDP,
 > transferências) é **compilado e testado** com Swift 6.4 em CI; as telas SwiftUI são verificadas
@@ -163,7 +164,7 @@ Passo a passo com capturas em [`Docs/PS4-SETUP.md`](Docs/PS4-SETUP.md).
 ## Testes
 
 ```bash
-swift test                     # 79 testes do núcleo (Linux/macOS)
+swift test                     # 101 testes do núcleo (Linux/macOS)
 python3 Tools/verify_xcodeproj.py
 python3 Tools/check_swift_style.py
 ```
@@ -172,7 +173,7 @@ O CI (GitHub Actions, `.github/workflows/ci.yml`) executa, a cada push:
 
 1. **Guardas**: projeto Xcode sincronizado com os fontes, parênteses/chaves balanceados, sem
    `TODO`/`fatalError` em telas.
-2. **Build + 79 testes** com Swift 6.4 (Linux).
+2. **Build + 101 testes** com Swift 6.4 (Linux).
 3. **Integração real de FTP**: sobe um **servidor FTP de verdade** (pyftpdlib) e envia um pacote de
    2 MiB com o mesmo `FTPClient` usado no app, validando tamanho, progresso incremental, `SIZE` e `LIST`.
 
@@ -225,11 +226,12 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 - Pesquisa sem acentos, filtros combináveis, ordenação, favoritos, recentes, destaques.
 - Página do jogo com estatísticas, metadados, seção "Sobre", capturas e CTA **ENVIAR PARA PS4**.
 - Painel administrativo com senha (hash + salt), validação e CRUD completo.
+- Assistente IA — Auto-Catálogo: busca real na RAWG, revisão com fontes, aprovação em lote.
 - Descoberta DDP real + conexão FTP real + configuração manual + consoles recentes.
 - Central de transferência com porcentagem, barra, velocidade, tempo restante, bytes enviados,
   estados (preparando, baixando, conectando, transferindo, pausado, concluído, erro) e cancelamento.
 - Limpeza de temporários, verificação de espaço livre antes do download, retomada por `Range`.
-- 79 testes automatizados + integração com servidor FTP real.
+- 101 testes automatizados + integração com servidor FTP real.
 
 ### Pendências / necessitam de ambiente macOS ou do console
 
@@ -260,6 +262,7 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 
 | Documento | Conteúdo |
 |---|---|
+| [`Docs/IA.md`](Docs/IA.md) | Assistente de auto-catálogo: fonte de dados, regras de link PKG, limites |
 | [`Docs/ARQUITETURA.md`](Docs/ARQUITETURA.md) | Camadas, fluxos, protocolos (FTP/DDP), decisões e alternativas |
 | [`Docs/PS4-SETUP.md`](Docs/PS4-SETUP.md) | Requisitos no console, portas, descoberta, solução de problemas |
 | [`Docs/BUILD.md`](Docs/BUILD.md) | Xcode, assinatura, simulador, TestFlight, IPA |
@@ -294,7 +297,7 @@ para quem tiver runners macOS — ele ainda precisaria ser assinado com o seu ce
 ## Verificação rápida do repositório
 
 ```bash
-swift test                        # núcleo: 79 testes
+swift test                        # núcleo: 101 testes
 python3 Tools/verify_xcodeproj.py # .xcodeproj sincronizado
 python3 Tools/check_swift_style.py
 python3 Tools/check_workflows.py
