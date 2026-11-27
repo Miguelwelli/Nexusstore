@@ -24,7 +24,7 @@ jobs:
         run: |
           FILES=$(find NexusStore Tests -name '*.swift' | sort)
           echo "$FILES" | wc -l
-          swift Tools/ci/ParseSwift.swift $FILES 2>&1 | tee parse.log
+          echo "::notice title=swift-syntax::$(swift Tools/ci/ParseSwift.swift $FILES 2>&1 | tee parse.log | tail -3 | tr '\n' ' ')"
       - name: Build core library
         run: |
           echo "Swift toolchain: $(swift --version 2>&1 | head -1)" > build.log
