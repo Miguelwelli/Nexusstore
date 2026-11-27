@@ -26,4 +26,6 @@ jobs:
           swift test -v 2>&1 | tee -a build.log
       - name: Publish diagnostics
         if: failure()
-        run: python3 Tools/publish_log.py build.log "swift core"
+        run: |
+          python3 Tools/extract_diagnostics.py build.log errors.log
+          python3 Tools/publish_log.py errors.log "swift core"

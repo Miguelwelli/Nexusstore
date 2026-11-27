@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Client for the PS4 web package installer (the "install package" endpoint exposed by the console's
 /// local web toolkit on port 12800).

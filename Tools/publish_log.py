@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Split a build log into GitHub Actions annotations so failures are readable via the API."""
-import os, sys
+import os, re, sys
+
+ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 MAX_CHUNK = 6000
 MAX_ANNOTATIONS = 9
@@ -14,7 +16,7 @@ def main() -> int:
     if not os.path.exists(path):
         print(f"::warning title={title}::log file {path} not found")
         return 0
-    data = open(path, "r", errors="replace").read()
+    data = ANSI.sub("", open(path, "r", errors="replace").read())
     if len(data) > MAX_CHUNK * MAX_ANNOTATIONS:
         data = data[: MAX_CHUNK * (MAX_ANNOTATIONS - 1)] + "\n...[truncated]...\n" + data[-MAX_CHUNK:]
     chunks = [data[i : i + MAX_CHUNK] for i in range(0, len(data), MAX_CHUNK)][:MAX_ANNOTATIONS]
