@@ -16,9 +16,9 @@ projeto) de **limitações deste ambiente de desenvolvimento**.
 
 ### O que foi feito para compensar
 
-1. **Núcleo compilado e testado de verdade:** Swift 6.4 no Linux, 74 testes automatizados.
+1. **Núcleo compilado e testado de verdade:** Swift 6.4 no Linux, 79 testes automatizados.
 2. **Integração real de FTP:** servidor pyftpdlib sobe no CI; upload de 2 MiB verificado byte a byte.
-3. **Todos os 52 arquivos Swift passam pelo parser do compilador** (`swiftc -frontend -parse`),
+3. **Todos os 56 arquivos Swift passam pelo parser do compilador** (`swiftc -frontend -parse`),
    incluindo as telas SwiftUI que só compilam no Xcode.
 4. **Guardas estruturais:** projeto Xcode sincronizado com os fontes, chaves/parênteses equilibrados,
    arquivos sem `TODO`/`fatalError` nas telas.
@@ -41,7 +41,7 @@ projeto) de **limitações deste ambiente de desenvolvimento**.
 | FTP não instala PKG | É transferência de arquivo; instalação depende do console | A UI avisa explicitamente, em três telas |
 | Sem FTPS/TLS | Servidores com TLS não são suportados | Erro claro (`FTPError.tlsRequired`) em vez de falha silenciosa |
 | Sem modo ativo | NAT/iOS impedem conexão de retorno | Somente modo passivo, documentado |
-| App suspenso interrompe FTP | Sockets diretos não sobrevivem à suspensão do iOS | Aviso na Central de Transferência; download HTTPS é retomável |
+| App suspenso interrompe FTP | Sockets diretos não sobrevivem à suspensão do iOS | Alerta automático ao sair do app durante o envio + aviso na Central; download HTTPS é retomável |
 | Sem retomada de upload | FTP não padroniza `REST` para `STOR` de forma confiável | Cancelamento limpa o parcial; novo envio recomeça do zero |
 | Descoberta depende de broadcast | Redes com isolamento bloqueiam | Campo de IP manual + consoles recentes |
 | Firmware/espaço do console | DDP não expõe esses dados | A UI mostra "não informado", nunca um valor inventado |

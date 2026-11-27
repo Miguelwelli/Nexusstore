@@ -102,7 +102,7 @@ O workflow `.github/workflows/ci.yml` roda em cada push:
 1. `Tools/verify_xcodeproj.py` — projeto sincronizado com os fontes.
 2. `Tools/check_swift_style.py` — chaves/parênteses equilibrados, sem `TODO`/`fatalError` nas telas.
 3. `Tools/ci/parse_all.sh` — **todos** os arquivos Swift passam pelo parser do compilador.
-4. `swift build` + `swift test` (74 testes, Swift 6.4, Linux).
+4. `swift build` + `swift test` (79 testes, Swift 6.4, Linux).
 5. Integração com **servidor FTP real** (pyftpdlib): upload de 2 MiB verificado byte a byte.
 
 O job de build do app iOS depende de macOS/Xcode. Neste repositório ele não é executado porque o

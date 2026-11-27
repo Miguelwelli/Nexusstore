@@ -5,8 +5,10 @@ import SwiftUI
 struct TransferCenterView: View {
     @ObservedObject var transfers: TransferCoordinator
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showCancelConfirmation = false
     @State private var showSettings = false
+    @State private var showBackgroundWarning = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -34,6 +36,17 @@ struct TransferCenterView: View {
         }
         .background(NexusBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .alert("Transferência pode ser interrompida", isPresented: $showBackgroundWarning) {
+            Button("Entendi", role: .cancel) {}
+        } message: {
+            Text("O iOS suspende o aplicativo em segundo plano e a conexão FTP é encerrada. Mantenha a Nexus Store aberta até a conclusão.")
+        }
+        .onChange(of: scenePhase) { phase in
+            // Honest warning: the FTP socket cannot survive app suspension, so say so before it happens.
+            if phase != .active, transfers.activeJob?.state.isRunning == true {
+                showBackgroundWarning = true
+            }
+        }
         .sheet(isPresented: $showSettings) {
             NexusSheetChrome {
                 TransferSettingsView(transfers: transfers, preferences: NexusFileStorage.preferences)

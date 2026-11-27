@@ -27,7 +27,7 @@
 | Central de transferência (porcentagem, velocidade, tempo restante, estados) | ✅ Implementado |
 | Instalador HTTP local do PS4 (porta 12800) e servidor HTTP no iPhone | ✅ Implementado (métodos alternativos) |
 | Build do app iOS | ⚠️ Código completo; compilação final precisa de Xcode (ver limitações) |
-| Testes do núcleo em Swift | ✅ 74 testes automatizados + integração FTP real |
+| Testes do núcleo em Swift | ✅ 79 testes automatizados + integração FTP real |
 
 > **Transparência:** este ambiente de desenvolvimento é Linux. O núcleo (catálogo, FTP, DDP,
 > transferências) é **compilado e testado** com Swift 6.4 em CI; as telas SwiftUI são verificadas
@@ -163,7 +163,7 @@ Passo a passo com capturas em [`Docs/PS4-SETUP.md`](Docs/PS4-SETUP.md).
 ## Testes
 
 ```bash
-swift test                     # 74 testes do núcleo (Linux/macOS)
+swift test                     # 79 testes do núcleo (Linux/macOS)
 python3 Tools/verify_xcodeproj.py
 python3 Tools/check_swift_style.py
 ```
@@ -172,7 +172,7 @@ O CI (GitHub Actions, `.github/workflows/ci.yml`) executa, a cada push:
 
 1. **Guardas**: projeto Xcode sincronizado com os fontes, parênteses/chaves balanceados, sem
    `TODO`/`fatalError` em telas.
-2. **Build + 74 testes** com Swift 6.4 (Linux).
+2. **Build + 79 testes** com Swift 6.4 (Linux).
 3. **Integração real de FTP**: sobe um **servidor FTP de verdade** (pyftpdlib) e envia um pacote de
    2 MiB com o mesmo `FTPClient` usado no app, validando tamanho, progresso incremental, `SIZE` e `LIST`.
 
@@ -187,6 +187,7 @@ Cobertura atual (resumo):
 | `FTPIntegrationTests` | **servidor real**: upload de 2 MiB, senha errada, porta fechada |
 | `PS4DiscoveryProtocolTests` | pacote `SRCH`, resposta `200 Ok`/`620 Standby`, pacotes inválidos |
 | `TransferEngineTests` | fluxo completo, falhas reais, fila sequencial, cancelamento, limpeza de temporários |
+| `TransferConfigurationTests` | preferências aplicadas ao motor, arquivo truncado detectado, limpeza no cancelamento |
 | `SeedCatalogTests` | catálogo embutido válido e links de demonstração não roteáveis |
 
 Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs/TESTES.md`](Docs/TESTES.md).
@@ -228,7 +229,7 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 - Central de transferência com porcentagem, barra, velocidade, tempo restante, bytes enviados,
   estados (preparando, baixando, conectando, transferindo, pausado, concluído, erro) e cancelamento.
 - Limpeza de temporários, verificação de espaço livre antes do download, retomada por `Range`.
-- 74 testes automatizados + integração com servidor FTP real.
+- 79 testes automatizados + integração com servidor FTP real.
 
 ### Pendências / necessitam de ambiente macOS ou do console
 

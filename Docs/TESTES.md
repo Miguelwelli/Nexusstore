@@ -3,7 +3,7 @@
 ## Como rodar
 
 ```bash
-swift test                                   # 74 testes (Core) — Linux e macOS
+swift test                                   # 79 testes (Core) — Linux e macOS
 python3 Tools/verify_xcodeproj.py            # projeto Xcode em sincronia com os fontes
 python3 Tools/check_swift_style.py           # guardas estruturais nos arquivos Swift
 ./Tools/ci/parse_all.sh $(find NexusStore Tests -name '*.swift')
@@ -87,6 +87,12 @@ swift test --filter FTPIntegrationTests
 - Cancelar um job na fila produz evento `cancelled`.
 - `discardTemporaryFile` remove o artefato.
 
+### `TransferConfigurationTests`
+- `deleteLocalFileWhenDone = false` mantém o `.pkg` após sucesso; alteração via
+  `updateConfiguration` vale para o próximo job.
+- Servidor que anuncia 100 KB e entrega 8 KB → estado `failed` (nunca "concluído").
+- Cancelamento remove o parcial quando configurado.
+
 ### `AdminCredentialTests`
 - SHA-256 validado contra vetores oficiais (`"abc"`, vazio, 1000 × `"a"`).
 - Salt diferente gera hash diferente; validação de senha mínima.
@@ -100,9 +106,10 @@ swift test --filter FTPIntegrationTests
 
 ## Evidências do CI
 
-- `Swift core (build + tests)` — build + 74 testes: **sucesso**.
+- `Swift core (build + tests)` — build + 79 testes: **sucesso**.
 - `FTP integration (real server)` — 3 testes com pyftpdlib: **sucesso**.
-- `Tools/ci/parse_all.sh` — 52 arquivos Swift aprovados pelo parser do compilador.
+- `Tools/ci/parse_all.sh` — 56 arquivos Swift aprovados pelo parser do compilador.
+- `Swift core summary` (notice do CI): `Executed 79 tests, with 3 tests skipped and 0 failures`.
 
 > Logs completos ficam em **Actions → CI**. O acesso aos logs brutos via API é bloqueado neste
 > ambiente; os resultados foram lidos pelas *annotations* dos jobs (sucesso/falha por teste).
