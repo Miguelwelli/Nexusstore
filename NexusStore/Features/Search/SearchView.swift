@@ -5,6 +5,9 @@ struct SearchView: View {
     @ObservedObject var catalog: CatalogStore
     @ObservedObject var router: AppRouter
     let preferences: PreferencesStore
+    /// Search is the tab that opens the admin panel, which needs the transfer coordinator for its
+    /// settings entry point.
+    @ObservedObject var transfers: TransferCoordinator
 
     @EnvironmentObject private var session: AdminSession
     @EnvironmentObject private var settings: SettingsStore
@@ -42,7 +45,12 @@ struct SearchView: View {
             }
         }
         .navigationDestination(isPresented: $showAdmin) {
-            AdminView(catalog: catalog, preferences: preferences, session: session)
+            AdminView(
+                catalog: catalog,
+                preferences: preferences,
+                session: session,
+                transfers: transfers
+            )
         }
     }
 

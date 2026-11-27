@@ -38,7 +38,7 @@ struct RootView: View {
                     }
                 case .search:
                     NavigationStack(path: $router.searchPath) {
-                        SearchView(catalog: catalog, router: router, preferences: preferences)
+                        SearchView(catalog: catalog, router: router, preferences: preferences, transfers: transfers)
                             .navigationDestination(for: Game.self) { game in
                                 GameDetailView(gameID: game.id, catalog: catalog, transfers: transfers, discovery: discovery, router: router)
                             }

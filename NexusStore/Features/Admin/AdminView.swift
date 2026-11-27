@@ -7,6 +7,8 @@ struct AdminView: View {
     @ObservedObject var catalog: CatalogStore
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
+    /// Passed down so the admin panel can open the transfer settings screen.
+    @ObservedObject var transfers: TransferCoordinator
 
     @EnvironmentObject private var autoCatalog: AutoCatalogStore
 
@@ -20,6 +22,7 @@ struct AdminView: View {
     @State private var showChangePassword = false
     @State private var showAdminPasswordSheet = false
     @State private var showAutoCatalog = false
+    @State private var showTransferSettings = false
 
     private var isUnlocked: Bool { session.isUnlocked && preferences.value.hasAdminPassword }
 
@@ -104,6 +107,12 @@ struct AdminView: View {
         .navigationDestination(isPresented: $showAutoCatalog) {
             AutoCatalogView(assistant: autoCatalog, catalog: catalog)
         }
+        .sheet(isPresented: $showTransferSettings) {
+            NexusSheetChrome {
+                TransferSettingsView(transfers: transfers, preferences: preferences)
+            }
+            .presentationDetents([.large])
+        }
         .sheet(isPresented: $showChangePassword) {
             NexusSheetChrome {
                 ChangePasswordView(preferences: preferences, onDone: { toast = "Senha atualizada" })
@@ -125,7 +134,10 @@ struct AdminView: View {
                     .foregroundStyle(NexusTheme.Palette.textTertiary)
             }
             Spacer()
+            IconButton(systemName: "gearshape.fill", background: .clear) { showTransferSettings = true }
+                .accessibilityLabel("Ajustes de transferência")
             IconButton(systemName: "key.fill", background: .clear) { showChangePassword = true }
+                .accessibilityLabel("Alterar senha")
             IconButton(systemName: "rectangle.portrait.and.arrow.right", background: .clear) {
                 session.isUnlocked = false
             }
@@ -464,6 +476,8 @@ struct AdminView: View {
 struct AdminPasswordSetupView: View {
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
+    /// Passed down so the admin panel can open the transfer settings screen.
+    @ObservedObject var transfers: TransferCoordinator
 
     @EnvironmentObject private var autoCatalog: AutoCatalogStore
 
@@ -538,6 +552,8 @@ struct AdminPasswordSetupView: View {
 struct AdminLoginView: View {
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
+    /// Passed down so the admin panel can open the transfer settings screen.
+    @ObservedObject var transfers: TransferCoordinator
 
     @EnvironmentObject private var autoCatalog: AutoCatalogStore
 
