@@ -9,6 +9,7 @@ struct NexusStoreApp: App {
     @StateObject private var router = AppRouter()
     @StateObject private var session = AdminSession()
     @StateObject private var settings: SettingsStore
+    @StateObject private var autoCatalog: AutoCatalogStore
 
     private let environment: AppEnvironment
 
@@ -19,6 +20,7 @@ struct NexusStoreApp: App {
         _transfers = StateObject(wrappedValue: environment.transfers)
         _discovery = StateObject(wrappedValue: environment.discovery)
         _settings = StateObject(wrappedValue: environment.settings)
+        _autoCatalog = StateObject(wrappedValue: environment.autoCatalog)
     }
 
     var body: some Scene {
@@ -33,6 +35,7 @@ struct NexusStoreApp: App {
             )
             .environmentObject(session)
             .environmentObject(settings)
+            .environmentObject(autoCatalog)
             .preferredColorScheme(.dark)
             .tint(NexusTheme.Palette.redBright)
         }

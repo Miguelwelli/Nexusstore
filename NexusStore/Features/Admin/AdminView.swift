@@ -8,6 +8,8 @@ struct AdminView: View {
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
 
+    @EnvironmentObject private var autoCatalog: AutoCatalogStore
+
     @Environment(\.dismiss) private var dismiss
     @State private var draft = GameDraft()
     @State private var errors: [GameField: String] = [:]
@@ -17,6 +19,7 @@ struct AdminView: View {
     @State private var showAllGames = false
     @State private var showChangePassword = false
     @State private var showAdminPasswordSheet = false
+    @State private var showAutoCatalog = false
 
     private var isUnlocked: Bool { session.isUnlocked && preferences.value.hasAdminPassword }
 
@@ -72,6 +75,7 @@ struct AdminView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 NoticeBanner("Catálogo local • \(catalog.games.count) jogos • todos os dados ficam neste iPhone", kind: .info)
+                autoCatalogEntry
                 formCard
                 if !errors.isEmpty {
                     NoticeBanner(errors.values.sorted().joined(separator: "\n"), kind: .error)
@@ -96,6 +100,9 @@ struct AdminView: View {
                 })
             }
             .presentationDetents([.large])
+        }
+        .navigationDestination(isPresented: $showAutoCatalog) {
+            AutoCatalogView(assistant: autoCatalog, catalog: catalog)
         }
         .sheet(isPresented: $showChangePassword) {
             NexusSheetChrome {
@@ -328,6 +335,61 @@ struct AdminView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Entry point for the AI assistant: a designed card, not a generic row.
+    private var autoCatalogEntry: some View {
+        Button {
+            showAutoCatalog = true
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [NexusTheme.Palette.red, NexusTheme.Palette.redDeep],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 42, height: 42)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text("Assistente IA — Auto-Catálogo")
+                            .font(.system(size: 13.5, weight: .bold))
+                            .foregroundStyle(NexusTheme.Palette.textPrimary)
+                        Text("NOVO")
+                            .font(.system(size: 8, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(NexusTheme.Palette.red))
+                    }
+                    Text("Busque jogos de PS4, extraia metadados reais e aprove em lote")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(NexusTheme.Palette.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(NexusTheme.Palette.textTertiary)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: NexusTheme.Metrics.cardRadius, style: .continuous)
+                    .fill(NexusTheme.Palette.surface.opacity(0.85))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: NexusTheme.Metrics.cardRadius, style: .continuous)
+                    .stroke(NexusTheme.Palette.red.opacity(0.35), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var registeredSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionHeader("Jogos Cadastrados (\(catalog.games.count))", actionTitle: "Ver todos") {
@@ -403,6 +465,8 @@ struct AdminPasswordSetupView: View {
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
 
+    @EnvironmentObject private var autoCatalog: AutoCatalogStore
+
     @State private var password = ""
     @State private var confirmation = ""
     @State private var error: String?
@@ -474,6 +538,8 @@ struct AdminPasswordSetupView: View {
 struct AdminLoginView: View {
     let preferences: PreferencesStore
     @ObservedObject var session: AdminSession
+
+    @EnvironmentObject private var autoCatalog: AutoCatalogStore
 
     @State private var password = ""
     @State private var error: String?

@@ -27,6 +27,7 @@ public enum NexusFileStorage {
     public static var consolesFile: URL { applicationSupport.appendingPathComponent("consoles.json") }
     public static var preferencesFile: URL { applicationSupport.appendingPathComponent("preferences.json") }
     public static var settingsFile: URL { applicationSupport.appendingPathComponent("settings.json") }
+    public static var autoCatalogFile: URL { applicationSupport.appendingPathComponent("auto-catalog.json") }
     public static var transfersDirectory: URL { caches.appendingPathComponent("Transfers", isDirectory: true) }
 
     public static var preferences: PreferencesStore { PreferencesStore(fileURL: preferencesFile) }
@@ -57,6 +58,7 @@ public final class AppEnvironment {
     public let transfers: TransferCoordinator
     public let discovery: PS4ConnectionService
     public let settings: SettingsStore
+    public let autoCatalog: AutoCatalogStore
 
     public init() {
         NexusFileStorage.prepare()
@@ -80,6 +82,11 @@ public final class AppEnvironment {
         )
         discovery = PS4ConnectionService(consoles: consoles)
         settings = SettingsStore(fileURL: NexusFileStorage.settingsFile)
+        autoCatalog = AutoCatalogStore(
+            repository: AutoCatalogRepository(fileURL: NexusFileStorage.autoCatalogFile),
+            keyStore: KeychainAPIKeyStore(),
+            catalog: catalog
+        )
     }
 }
 
