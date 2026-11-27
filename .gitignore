@@ -1,0 +1,29 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+build/
+*.ipa
+*.dSYM.zip
+
+# Tooling
+__pycache__/
+*.pyc
+.venv/
+Tools/__pycache__/
+*.log
+
+# macOS
+.DS_Store
+
+# Local secrets (never commit signing material or credentials)
+*.p12
+*.mobileprovision
+Secret.xcconfig

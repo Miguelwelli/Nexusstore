@@ -1,22 +1,29 @@
 name: CI
+
 on:
   push:
     branches: ["**"]
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
   core:
+    name: Swift core (build + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Toolchain info
-        run: swift --version | tee build.log
-      - name: Build (probe failure)
+      - name: Swift toolchain
+        run: swift --version
+      - name: Build core library
         run: |
-          echo "This is a deliberate probe" >> build.log
-          echo "error: cannot find 'Foo' in scope" >> build.log
-          exit 1
+          set -o pipefail
+          swift build -v 2>&1 | tee build.log
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          swift test -v 2>&1 | tee -a build.log
       - name: Publish diagnostics
         if: failure()
-        run: python3 Tools/publish_log.py build.log "swift probe"
+        run: python3 Tools/publish_log.py build.log "swift core"
