@@ -410,7 +410,7 @@ public final class TransferEngine: @unchecked Sendable {
     // MARK: - Emission
 
     private func emitState(_ id: UUID, _ state: TransferJob.State, _ message: String) {
-        emit(id, .state(state, message))
+        emit(id, .state(state, message: message))
     }
 
     private func emit(_ id: UUID, _ event: TransferEvent) {
