@@ -84,7 +84,10 @@ public final class AppEnvironment {
         settings = SettingsStore(fileURL: NexusFileStorage.settingsFile)
         autoCatalog = AutoCatalogStore(
             repository: AutoCatalogRepository(fileURL: NexusFileStorage.autoCatalogFile),
-            keyStore: KeychainAPIKeyStore(),
+            keyStores: [
+                .rawg: KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.rawg.credentialAccount),
+                .gemini: KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.gemini.credentialAccount)
+            ],
             catalog: catalog
         )
     }

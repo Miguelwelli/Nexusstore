@@ -33,6 +33,14 @@ def strip_strings_and_comments(source: str) -> str:
             while index + 1 < length and not (source[index] == "*" and source[index + 1] == "/"):
                 index += 1
             index += 2
+        elif source.startswith('"""', index):
+            # Multi-line string literal: skip to the closing triple quote. Treating `"""` as a
+            # normal string left the embedded JSON braces counted as code, which produced false
+            # "unbalanced braces" reports for prompts that contain JSON examples.
+            index += 3
+            while index + 2 < length and not source.startswith('"""', index):
+                index += 1
+            index += 3
         elif char == '"':
             # naive handling of interpolation is fine for brace counting
             index += 1
