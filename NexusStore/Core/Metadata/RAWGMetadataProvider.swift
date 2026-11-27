@@ -48,7 +48,9 @@ public struct RAWGMetadataProvider: MetadataProvider {
         let genres = Self.genreSlugs(for: query.categories)
         var collected: [MetadataCandidate] = []
         var seen = Set(query.excludedTitles.map(TitleNormalizer.normalize))
-        var skipped = 0
+        // Distinct titles dropped as duplicates. A Set, not a counter: paging can return the same
+        // title twice (the stubbed server always returns page 1) and it must count once.
+        var skipped = Set<String>()
         var page = 1
 
         // Ask for a bit more than requested; duplicates against the catalog are dropped below.
@@ -77,7 +79,7 @@ public struct RAWGMetadataProvider: MetadataProvider {
                 guard let candidate = candidate(from: result) else { continue }
                 let key = TitleNormalizer.normalize(candidate.title)
                 guard !seen.contains(key) else {
-                    skipped += 1
+                    skipped.insert(key)
                     continue
                 }
                 seen.insert(key)
@@ -86,7 +88,7 @@ public struct RAWGMetadataProvider: MetadataProvider {
             }
             page += 1
         }
-        return MetadataSearchResult(items: Array(collected.prefix(wanted)), duplicatesSkipped: skipped)
+        return MetadataSearchResult(items: Array(collected.prefix(wanted)), duplicatesSkipped: skipped.count)
     }
 
     // MARK: - Mapping
