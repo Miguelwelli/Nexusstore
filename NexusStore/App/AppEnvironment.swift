@@ -29,6 +29,8 @@ public enum NexusFileStorage {
     public static var settingsFile: URL { applicationSupport.appendingPathComponent("settings.json") }
     public static var transfersDirectory: URL { caches.appendingPathComponent("Transfers", isDirectory: true) }
 
+    public static var preferences: PreferencesStore { PreferencesStore(fileURL: preferencesFile) }
+
     public static func prepare() {
         for directory in [applicationSupport, transfersDirectory] {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

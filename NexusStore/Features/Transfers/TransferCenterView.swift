@@ -6,6 +6,7 @@ struct TransferCenterView: View {
     @ObservedObject var transfers: TransferCoordinator
     @Environment(\.dismiss) private var dismiss
     @State private var showCancelConfirmation = false
+    @State private var showSettings = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -33,6 +34,12 @@ struct TransferCenterView: View {
         }
         .background(NexusBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showSettings) {
+            NexusSheetChrome {
+                TransferSettingsView(transfers: transfers, preferences: NexusFileStorage.preferences)
+            }
+            .presentationDetents([.large])
+        }
         .confirmationDialog("Cancelar transferência?", isPresented: $showCancelConfirmation, titleVisibility: .visible) {
             Button("Cancelar transferência", role: .destructive) {
                 if let job = transfers.activeJob { transfers.cancel(job) }
@@ -51,8 +58,8 @@ struct TransferCenterView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(NexusTheme.Palette.textPrimary)
             Spacer()
-            IconButton(systemName: "info.circle", background: .clear) {}
-                .accessibilityLabel("Informações")
+            IconButton(systemName: "gearshape", background: .clear) { showSettings = true }
+                .accessibilityLabel("Ajustes de transferência")
         }
     }
 

@@ -48,6 +48,7 @@ public final class AppRouter: ObservableObject {
     @Published public var categoriesPath = NavigationPath()
     @Published public var searchPath = NavigationPath()
     @Published public var ps4Path = NavigationPath()
+    @Published public var showTransferSettings = false
 
     public func open(_ game: Game, from section: AppSection? = nil) {
         let target = section ?? self.section

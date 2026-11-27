@@ -53,6 +53,7 @@
 		0EE9DF9618D77D1845C1F171 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CC23DA68C1AA09EC4F6AABC /* RootView.swift */; };
 		44E6C2145254B0A32FC1A5CD /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F03F38CD523516794FB478 /* SearchView.swift */; };
 		1ADADBD540A7FB5108002C6A /* TransferCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351F484E7BB0E088AA2F6FA0 /* TransferCenterView.swift */; };
+		AA97577C6B4E2A6CF74A6DAC /* TransferSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42CD2E01451C0F4543F3497 /* TransferSettingsView.swift */; };
 		D046D52889FC38635F0EF92B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 76342DC09F000A9DC7D65C77 /* Assets.xcassets */; };
 		AA84D719358EF7E9F87668CA /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 59FAB6EA9CA8BF5519D0846B /* Contents.json */; };
 		E1A4DB7DC952689A3602A0F3 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = F8D16AA3380BD8830CECD67E /* Contents.json */; };
@@ -117,6 +118,7 @@
 		2CC23DA68C1AA09EC4F6AABC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/RootView.swift; sourceTree = SOURCE_ROOT; };
 		31F03F38CD523516794FB478 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Search/SearchView.swift; sourceTree = SOURCE_ROOT; };
 		351F484E7BB0E088AA2F6FA0 /* TransferCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Transfers/TransferCenterView.swift; sourceTree = SOURCE_ROOT; };
+		B42CD2E01451C0F4543F3497 /* TransferSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Transfers/TransferSettingsView.swift; sourceTree = SOURCE_ROOT; };
 		76342DC09F000A9DC7D65C77 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = NexusStore/Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
 		59FAB6EA9CA8BF5519D0846B /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = NexusStore/Resources/Assets.xcassets/AccentColor.colorset/Contents.json; sourceTree = SOURCE_ROOT; };
 		F8D16AA3380BD8830CECD67E /* Contents.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = NexusStore/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json; sourceTree = SOURCE_ROOT; };
@@ -346,6 +348,7 @@
 			isa = PBXGroup;
 			children = (
 				351F484E7BB0E088AA2F6FA0 /* TransferCenterView.swift */,
+				B42CD2E01451C0F4543F3497 /* TransferSettingsView.swift */,
 			);
 			path = Transfers;
 			sourceTree = "<group>";
@@ -496,6 +499,7 @@
 				0EE9DF9618D77D1845C1F171 /* RootView.swift in Sources */,
 				44E6C2145254B0A32FC1A5CD /* SearchView.swift in Sources */,
 				1ADADBD540A7FB5108002C6A /* TransferCenterView.swift in Sources */,
+				AA97577C6B4E2A6CF74A6DAC /* TransferSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

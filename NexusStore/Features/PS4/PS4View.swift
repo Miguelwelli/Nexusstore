@@ -8,6 +8,7 @@ struct PS4View: View {
 
     @State private var showManualSetup = false
     @State private var showAdvanced = false
+    @State private var showTransferSettings = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -34,6 +35,12 @@ struct PS4View: View {
         .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(isPresented: $showManualSetup) {
             ManualConsoleView(discovery: discovery)
+        }
+        .sheet(isPresented: $showTransferSettings) {
+            NexusSheetChrome {
+                TransferSettingsView(transfers: transfers, preferences: NexusFileStorage.preferences)
+            }
+            .presentationDetents([.large])
         }
         .navigationDestination(isPresented: $showAdvanced) {
             if let profile = primaryProfile {

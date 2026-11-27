@@ -130,10 +130,9 @@ public final class TransferCoordinator: ObservableObject {
         if let active = activeJobID, !jobs.contains(where: { $0.id == active }) { activeJobID = nil }
     }
 
-    /// Called when the connection settings change.
+    /// Applies new transfer settings immediately (used by the settings sheet).
     public func updateConfiguration(_ configuration: TransferConfiguration) {
-        // The engine keeps its configuration for the lifetime of the app session; a relaunch applies
-        // the stored value. Documented in the settings screen.
+        engine.updateConfiguration(configuration)
     }
 
     // MARK: - Event handling

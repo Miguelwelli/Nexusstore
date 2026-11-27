@@ -57,7 +57,7 @@ public final class TransferEngine: @unchecked Sendable {
     private let workingDirectory: URL
     private let networking: TransferNetworking
     private let ftpProvider: FTPSocketProvider
-    private let configuration: TransferConfiguration
+    private var configuration: TransferConfiguration
     private let fileManager: FileManager
 
     private let lock = NSLock()
@@ -89,6 +89,11 @@ public final class TransferEngine: @unchecked Sendable {
     }
 
     // MARK: - Observation
+
+    /// Applies new settings (temporary-file policy...) to the next jobs.
+    public func updateConfiguration(_ configuration: TransferConfiguration) {
+        lock.lock(); self.configuration = configuration; lock.unlock()
+    }
 
     /// Registers the observer used to push UI updates.
     public func setEventHandler(_ handler: @escaping EventHandler) {
