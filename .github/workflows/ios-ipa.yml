@@ -1,0 +1,49 @@
+name: iOS build + IPA
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Archive iOS app and package an unsigned IPA
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          xcode-select -p
+      - name: Archive (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project NexusStore.xcodeproj \
+            -scheme NexusStore \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/NexusStore.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 2>&1 | tee archive.log
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p build/Payload
+          cp -R build/NexusStore.xcarchive/Products/Applications/NexusStore.app build/Payload/
+          cd build && zip -qry NexusStore-unsigned.ipa Payload
+          ls -la NexusStore-unsigned.ipa
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexusStore-unsigned-ipa
+          path: build/NexusStore-unsigned.ipa
+          if-no-files-found: error
+      - name: Publish diagnostics
+        if: failure()
+        run: |
+          python3 Tools/extract_diagnostics.py archive.log ios-errors.log || true
+          python3 Tools/publish_log.py ios-errors.log "ios build" || true
