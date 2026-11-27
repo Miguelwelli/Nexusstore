@@ -18,8 +18,11 @@ jobs:
         run: swift --version
       - name: Project + source guards
         run: |
-          python3 Tools/verify_xcodeproj.py
-          python3 Tools/check_swift_style.py
+          set -o pipefail
+          python3 Tools/verify_xcodeproj.py 2>&1 | tee guards.log
+          echo "::notice title=guards xcodeproj::$(tail -1 guards.log)"
+          python3 Tools/check_swift_style.py 2>&1 | tee -a guards.log
+          echo "::notice title=guards style::$(tail -1 guards.log)"
       - name: Parse every Swift file (syntax-only)
         run: |
           FILES=$(find NexusStore Tests -name '*.swift' | sort)
@@ -45,7 +48,8 @@ jobs:
       - name: Publish summary
         if: always()
         run: |
-          python3 Tools/extract_diagnostics.py build.log test-summary.log
+          cat guards.log build.log 2>/dev/null > all.log || true
+          python3 Tools/extract_diagnostics.py all.log test-summary.log
           grep -E "Executed [0-9]+ tests|ok: all" test-summary.log | tail -4 > summary-only.log || true
           echo "::notice title=swift core summary::$(tr '\n' ' | ' < summary-only.log)"
       - name: Publish diagnostics
