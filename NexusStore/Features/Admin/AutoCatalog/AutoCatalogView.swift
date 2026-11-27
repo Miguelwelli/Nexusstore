@@ -506,11 +506,22 @@ struct AutoCatalogView: View {
     }
 
     private var legalNote: some View {
-        Text("Metadados de fonte pública (RAWG). A Nexus Store não distribui jogos: cadastre apenas arquivos que você tem direito de usar.")
-            .font(.system(size: 9.5))
-            .foregroundStyle(NexusTheme.Palette.textTertiary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 6) {
+            // RAWG's free tier requires an active hyperlink wherever its data is displayed.
+            Link(destination: URL(string: "https://rawg.io")!) {
+                HStack(spacing: 4) {
+                    Image(systemName: "link")
+                    Text("Dados e imagens: RAWG Video Games Database")
+                }
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(NexusTheme.Palette.redBright)
+            }
+            Text("A Nexus Store não distribui jogos: cadastre apenas arquivos que você tem direito de usar.")
+                .font(.system(size: 9.5))
+                .foregroundStyle(NexusTheme.Palette.textTertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Help sheet

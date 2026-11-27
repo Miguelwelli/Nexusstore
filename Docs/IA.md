@@ -71,6 +71,21 @@ fictício. Se uma camada Gemini for adicionada, ela aparece nesse seletor.
 binário, não que você tem direito de distribuí-lo. O assistente **nunca inventa** um link: ele só usa
 links informados pelo administrador, e um jogo com link não verificado fica bloqueado para aprovação.
 
+## 3.1 Licença da RAWG (obrigatório)
+
+O plano gratuito da RAWG autoriza uso pessoal **desde que**:
+
+- a RAWG seja atribuída como fonte dos dados e imagens;
+- exista um **hyperlink ativo** em toda tela onde os dados aparecem.
+
+O app cumpre isso em dois lugares: a tela de configuração e a tela de revisão mostram
+"Dados e imagens: RAWG Video Games Database" com link para `https://rawg.io`. O campo `sourceURLString`
+de cada candidato aponta para a página do jogo na RAWG.
+
+Restrições adicionais do plano gratuito: até 20.000 requisições/mês, uso não comercial e proibição de
+redistribuir os dados como API. Para uso comercial acima dos limites, é necessário contratar o plano
+pago da RAWG — nada neste app contorna esse limite.
+
 ## 4. Chave de API
 
 - Fica no **Keychain**, nunca em `UserDefaults`, nunca em arquivo do repositório, nunca em log.

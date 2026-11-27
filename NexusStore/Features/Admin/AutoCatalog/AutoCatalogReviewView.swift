@@ -40,6 +40,14 @@ struct AutoCatalogReviewView: View {
                             }
                         }
                     }
+                    if let url = URL(string: "https://rawg.io") {
+                        Link(destination: url) {
+                            Text("Dados e imagens: RAWG Video Games Database")
+                                .font(.system(size: 9.5, weight: .semibold))
+                                .foregroundStyle(NexusTheme.Palette.redBright)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                     Color.clear.frame(height: pending.isEmpty ? 16 : 96)
                 }
                 .padding(.horizontal, NexusTheme.Metrics.screenPadding)
