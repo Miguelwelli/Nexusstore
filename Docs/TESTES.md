@@ -124,4 +124,5 @@ swift test --filter FTPIntegrationTests
 | Descoberta DDP com PS4 físico | Sem console | Rodar o app na mesma Wi-Fi do PS4 |
 | FTP em servidor de console real | Sem console | Testar com o servidor do usuário |
 | Transferência de arquivo > 4 GB | Tempo/espaço no CI | Testar manualmente com um `.pkg` grande |
+| Telas SwiftUI compiladas | Sem Xcode | `xcodebuild` em um mac (Docs/BUILD.md) — hoje garantido: parse do compilador + guardas estruturais |
 | Suspensão do app durante FTP | Requer dispositivo | Testar em iPhone com bloqueio de tela |

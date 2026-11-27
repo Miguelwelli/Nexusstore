@@ -269,6 +269,17 @@ Relatório detalhado (incluindo o que **não** pôde ser testado aqui) em [`Docs
 
 ---
 
+## Verificação rápida do repositório
+
+```bash
+swift test                        # núcleo: 79 testes
+python3 Tools/verify_xcodeproj.py # .xcodeproj sincronizado
+python3 Tools/check_swift_style.py
+./Tools/ci/parse_all.sh $(find NexusStore Tests -name '*.swift')
+```
+
+Os quatro comandos acima rodam no CI a cada push, junto com a integração FTP real.
+
 ## Aviso
 
 A Nexus Store é uma **ferramenta pessoal de gerenciamento de catálogo e transferência de arquivos**.
