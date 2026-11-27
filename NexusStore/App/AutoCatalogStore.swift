@@ -28,6 +28,7 @@ public final class AutoCatalogStore: ObservableObject {
     private let repository: AutoCatalogRepository
     private let keyStore: APIKeyStoring
     private let catalog: CatalogStore
+    private let ingestion: CatalogIngestion
     private let sessionFactory: (String) -> URLSession
     /// Admin supplied .pkg links keyed by normalized title. The assistant never invents links.
     private var pkgLinks: [String: String] = [:]
@@ -41,6 +42,7 @@ public final class AutoCatalogStore: ObservableObject {
         self.repository = repository
         self.keyStore = keyStore
         self.catalog = catalog
+        self.ingestion = CatalogIngestion(repository: catalog.repository)
         self.sessionFactory = sessionFactory
         self.history = repository.searches
         self.configuration = repository.configuration
@@ -177,8 +179,9 @@ public final class AutoCatalogStore: ObservableObject {
         guard candidate.state == .pending else {
             return .failure(.duplicateName(candidate.title))
         }
-        switch catalog.add(candidate.makeDraft()) {
+        switch ingestion.approve(candidate) {
         case .success(let game):
+            catalog.reload()
             mutate(searchID: searchID) { search in
                 guard let index = search.candidates.firstIndex(where: { $0.id == candidate.id }) else { return }
                 search.candidates[index].state = .approved
@@ -194,26 +197,18 @@ public final class AutoCatalogStore: ObservableObject {
     @discardableResult
     public func approveAll(in searchID: UUID) -> (approved: Int, skipped: Int) {
         guard let search = repository.search(id: searchID) else { return (0, 0) }
-        var approved = 0
-        var skipped = 0
-        for candidate in search.candidates where candidate.state == .pending {
-            guard candidate.isReady else {
-                skipped += 1
-                continue
-            }
-            switch catalog.add(candidate.makeDraft()) {
-            case .success(let game):
-                approved += 1
-                mutate(searchID: searchID) { stored in
-                    guard let index = stored.candidates.firstIndex(where: { $0.id == candidate.id }) else { return }
-                    stored.candidates[index].state = .approved
-                    stored.candidates[index].catalogGameID = game.id
+        let result = ingestion.approveAll(in: search)
+        catalog.reload()
+        if !result.updates.isEmpty {
+            mutate(searchID: searchID) { stored in
+                for update in result.updates {
+                    guard let index = stored.candidates.firstIndex(where: { $0.id == update.candidateID }) else { continue }
+                    stored.candidates[index].state = update.state
+                    stored.candidates[index].catalogGameID = update.catalogGameID
                 }
-            case .failure:
-                skipped += 1
             }
         }
-        return (approved, skipped)
+        return (result.updates.count, result.skipped)
     }
 
     public func recheckPKGLink(for candidate: CatalogCandidate, in searchID: UUID) async {

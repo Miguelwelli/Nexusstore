@@ -13,7 +13,8 @@ public final class CatalogStore: ObservableObject {
     @Published public private(set) var recentlyViewed: [Game] = []
     @Published public var lastError: String?
 
-    private let repository: CatalogRepository
+    /// Exposed so the assistant can reuse the same persistence layer (never a second catalog).
+    public let repository: CatalogRepository
 
     public init(repository: CatalogRepository) {
         self.repository = repository

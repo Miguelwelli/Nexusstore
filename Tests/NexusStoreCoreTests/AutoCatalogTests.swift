@@ -278,46 +278,54 @@ final class AutoCatalogTests: XCTestCase {
 
     // MARK: - Approval into the real catalog
 
-    func testApprovalAddsToExistingCatalogAndBlocksDuplicates() async throws {
-        Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
-        let repository = CatalogRepository(fileURL: directory.appendingPathComponent("catalog.json"))
-        let catalog = await CatalogStore(repository: repository)
-        let assistantRepository = AutoCatalogRepository(fileURL: directory.appendingPathComponent("ai.json"))
-
-        Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
-        let provider = RAWGMetadataProvider(apiKey: "k", session: session)
-        let outcome = try await AutoCatalogAssistant(provider: provider, verifier: PKGLinkVerifier(session: session))
-            .run(request: AutoCatalogRequest(categories: ["acao"], quantity: 3), existingGames: [])
-        var search = AutoCatalogSearch(request: AutoCatalogRequest(categories: ["acao"], quantity: 3), providerName: "RAWG")
-        search.finishedAt = Date()
-        // The provider returns no size (RAWG has none), so nothing is "ready" until the admin fills it.
-        search.candidates = outcome.candidates.map { candidate in
-            var updated = candidate
-            updated.sizeText = "12.5 GB"
-            return updated
-        }
-        assistantRepository.upsert(search)
-
-        let store = await AutoCatalogStore(
-            repository: assistantRepository,
-            keyStore: InMemoryAPIKeyStore(value: "k"),
-            catalog: catalog
+    func testApprovalAddsToExistingCatalogAndBlocksDuplicates() throws {
+        let repository = try CatalogRepository(fileURL: directory.appendingPathComponent("catalog.json"))
+        let ingestion = CatalogIngestion(repository: repository)
+        let candidate = CatalogCandidate(
+            title: "Sekiro: Shadows Die Twice",
+            categories: ["acao"],
+            sizeText: "12.5 GB",
+            coverURLString: "https://media.rawg.io/media/games/sekiro.jpg"
         )
 
-        let first = await store.approveAll(in: search.id)
-        XCTAssertEqual(first.approved, 2)
-        XCTAssertEqual(await catalog.games.count, 2)
+        guard case .success(let game) = ingestion.approve(candidate) else {
+            return XCTFail("a aprovação deveria funcionar com dados completos")
+        }
+        XCTAssertEqual(repository.games.count, 1)
+        XCTAssertEqual(game.sizeText, "12.5 GB")
+        XCTAssertEqual(game.categories, ["acao"])
+        XCTAssertEqual(game.platformTag, "PS4")
 
-        // Approving the same game again must not duplicate it.
-        let second = await store.approveAll(in: search.id)
-        XCTAssertEqual(second.approved, 0)
-        XCTAssertEqual(await catalog.games.count, 2)
+        // Same game again (even pending a second time) must be refused, not duplicated.
+        guard case .failure(let error) = ingestion.approve(candidate) else {
+            return XCTFail("aprovar duas vezes deveria falhar")
+        }
+        XCTAssertEqual(error, .duplicateName("Sekiro: Shadows Die Twice"))
+        XCTAssertEqual(repository.games.count, 1)
+    }
 
-        let stored = try XCTUnwrap(await catalog.games.first { $0.name.contains("Sekiro") })
-        XCTAssertEqual(stored.sizeText, "12.5 GB")
-        XCTAssertEqual(stored.categories, ["acao"])
-        XCTAssertEqual(stored.coverURLString, "https://media.rawg.io/media/games/sekiro.jpg")
-        XCTAssertEqual(stored.platformTag, "PS4")
+    func testApproveAllSkipsIncompleteCandidatesAndReportsCounts() throws {
+        let repository = try CatalogRepository(fileURL: directory.appendingPathComponent("catalog2.json"))
+        let ingestion = CatalogIngestion(repository: repository)
+        var search = AutoCatalogSearch(request: AutoCatalogRequest(categories: ["acao"], quantity: 3))
+        search.candidates = [
+            CatalogCandidate(title: "Jogo Completo", categories: ["acao"], sizeText: "10 GB"),
+            CatalogCandidate(title: "Jogo Sem Tamanho", categories: ["acao"], sizeText: ""),
+            CatalogCandidate(title: "Jogo com Link Não Verificado", categories: ["acao"], sizeText: "8 GB", downloadURLString: "https://x.test/a.pkg")
+        ]
+        let result = ingestion.approveAll(in: search)
+        XCTAssertEqual(result.updates.count, 1)
+        XCTAssertEqual(result.skipped, 2)
+        XCTAssertEqual(repository.games.map(\.name), ["Jogo Completo"])
+        XCTAssertEqual(result.updates.first?.catalogGameID, repository.games.first?.id)
+    }
+
+    func testRejectionDoesNotTouchTheCatalog() throws {
+        let repository = try CatalogRepository(fileURL: directory.appendingPathComponent("catalog3.json"))
+        let ingestion = CatalogIngestion(repository: repository)
+        let update = ingestion.reject(candidateID: UUID())
+        XCTAssertEqual(update.state, .rejected)
+        XCTAssertTrue(repository.games.isEmpty)
     }
 
     func testCandidateWithoutSizeIsNotReady() async {
@@ -348,17 +356,20 @@ final class AutoCatalogTests: XCTestCase {
         XCTAssertEqual(reopened.searches.first?.providerName, "run-4")
     }
 
-    func testRejectingCandidateKeepsItInHistory() async throws {
+    func testRejectingCandidateKeepsItInHistory() throws {
         let repository = AutoCatalogRepository(fileURL: directory.appendingPathComponent("reject.json"))
         var search = AutoCatalogSearch(request: AutoCatalogRequest(categories: ["acao"], quantity: 1))
         search.candidates = [CatalogCandidate(title: "A", categories: ["acao"], sizeText: "1 GB")]
         repository.upsert(search)
-        let catalog = await CatalogStore(repository: CatalogRepository(fileURL: directory.appendingPathComponent("c2.json")))
-        let store = await AutoCatalogStore(repository: repository, keyStore: InMemoryAPIKeyStore(), catalog: catalog)
-        await store.reject(candidateID: search.candidates[0].id, in: search.id)
-        let stored = await store.search(id: search.id)
-        XCTAssertEqual(stored?.candidates.first?.state, .rejected)
-        XCTAssertEqual(stored?.rejectedCount, 1)
+
+        let ingestion = CatalogIngestion(repository: try CatalogRepository(fileURL: directory.appendingPathComponent("c4.json")))
+        let update = ingestion.reject(candidateID: search.candidates[0].id)
+        search.candidates[0].state = update.state
+        repository.upsert(search)
+
+        let stored = try XCTUnwrap(AutoCatalogRepository(fileURL: directory.appendingPathComponent("reject.json")).search(id: search.id))
+        XCTAssertEqual(stored.candidates.first?.state, .rejected)
+        XCTAssertEqual(stored.rejectedCount, 1)
     }
 }
 
