@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Real metadata source: RAWG Video Games Database (https://rawg.io/apidocs).
 ///

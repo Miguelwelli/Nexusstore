@@ -13,6 +13,7 @@ public protocol APIKeyStoring: AnyObject {
     func delete()
 }
 
+#if !os(Linux)
 public enum APIKeyStoreError: LocalizedError {
     case keychain(OSStatus)
 
@@ -23,6 +24,7 @@ public enum APIKeyStoreError: LocalizedError {
         }
     }
 }
+#endif
 
 /// In-memory implementation used by tests and previews.
 public final class InMemoryAPIKeyStore: APIKeyStoring {
