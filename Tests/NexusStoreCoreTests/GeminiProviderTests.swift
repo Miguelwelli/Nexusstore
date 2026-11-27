@@ -133,14 +133,16 @@ final class GeminiProviderTests: XCTestCase {
     }
 
     func testPackageSizeIsKeptOnlyWhenItParses() async throws {
+        // Titles must be >= 2 characters: the parser rejects single-letter names by design.
         let payload = """
-        {"games":[{"title":"A","packageSize":"48.5 GB","sourceURLs":["https://x.test/a"]},
-                  {"title":"B","packageSize":"muito grande","sourceURLs":["https://x.test/b"]}]}
+        {"games":[{"title":"Jogo A","packageSize":"48.5 GB","sourceURLs":["https://x.test/a"]},
+                  {"title":"Jogo B","packageSize":"muito grande","sourceURLs":["https://x.test/b"]}]}
         """
         Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.response(text: payload, citations: ["https://x.test/a", "https://x.test/b"])) }
         let result = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 2))
+        XCTAssertEqual(result.items.count, 2)
         XCTAssertEqual(result.items.first?.sizeText, "48.5 GB")
-        XCTAssertEqual(result.items.last?.sizeText, "")
+        XCTAssertEqual(result.items.last?.sizeText, "", "tamanho não numérico deve ficar vazio")
     }
 
     // MARK: - Errors
