@@ -41,13 +41,14 @@ public struct RAWGMetadataProvider: MetadataProvider {
 
     // MARK: - Search
 
-    public func search(_ query: MetadataQuery) async throws -> [MetadataCandidate] {
+    public func search(_ query: MetadataQuery) async throws -> MetadataSearchResult {
         guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else {
             throw MetadataProviderError.missingCredential
         }
         let genres = Self.genreSlugs(for: query.categories)
         var collected: [MetadataCandidate] = []
         var seen = Set(query.excludedTitles.map(TitleNormalizer.normalize))
+        var skipped = 0
         var page = 1
 
         // Ask for a bit more than requested; duplicates against the catalog are dropped below.
@@ -75,14 +76,17 @@ public struct RAWGMetadataProvider: MetadataProvider {
             for result in results {
                 guard let candidate = candidate(from: result) else { continue }
                 let key = TitleNormalizer.normalize(candidate.title)
-                guard !seen.contains(key) else { continue }
+                guard !seen.contains(key) else {
+                    skipped += 1
+                    continue
+                }
                 seen.insert(key)
                 collected.append(candidate)
                 if collected.count >= wanted { break }
             }
             page += 1
         }
-        return Array(collected.prefix(wanted))
+        return MetadataSearchResult(items: Array(collected.prefix(wanted)), duplicatesSkipped: skipped)
     }
 
     // MARK: - Mapping

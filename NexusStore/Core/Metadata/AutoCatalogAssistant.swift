@@ -37,9 +37,10 @@ public struct AutoCatalogAssistant: Sendable {
             limit: request.quantity,
             excludedTitles: existingGames.map(\.name)
         )
-        let results = try await provider.search(query)
+        let response = try await provider.search(query)
+        let results = response.items
 
-        var duplicates = 0
+        var duplicates = response.duplicatesSkipped
         var candidates: [CatalogCandidate] = []
         for result in results {
             let isDuplicate = existingGames.contains { TitleNormalizer.areEquivalent($0.name, result.title) }

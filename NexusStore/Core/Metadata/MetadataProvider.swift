@@ -121,11 +121,23 @@ public enum MetadataProviderError: LocalizedError, Equatable, Sendable {
     }
 }
 
+/// Result of a provider search: the new candidates plus the titles the provider discarded because they
+/// were duplicates. Reporting the count keeps the UI honest ("3 duplicados ignorados").
+public struct MetadataSearchResult: Sendable, Equatable {
+    public var items: [MetadataCandidate]
+    public var duplicatesSkipped: Int
+
+    public init(items: [MetadataCandidate], duplicatesSkipped: Int = 0) {
+        self.items = items
+        self.duplicatesSkipped = duplicatesSkipped
+    }
+}
+
 /// Contract implemented by every metadata source (RAWG today; adding another source means adding a
 /// type, not touching the screens).
 public protocol MetadataProvider: Sendable {
     var displayName: String { get }
     /// Cheap call that validates credentials and reports latency.
     func testConnection() async throws -> TimeInterval
-    func search(_ query: MetadataQuery) async throws -> [MetadataCandidate]
+    func search(_ query: MetadataQuery) async throws -> MetadataSearchResult
 }

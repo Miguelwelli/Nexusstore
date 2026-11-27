@@ -160,9 +160,10 @@ final class AutoCatalogTests: XCTestCase {
 
     func testSearchMapsRealFieldsAndFiltersToPS4() async throws {
         Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
-        let results = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 3, excludedTitles: ["Bloodborne"]))
-        XCTAssertEqual(results.count, 1, "Bloodborne já estava no catálogo e o duplicado interno deve ser descartado")
-        let sekiro = try XCTUnwrap(results.first)
+        let response = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 3, excludedTitles: ["Bloodborne"]))
+        XCTAssertEqual(response.items.count, 1, "Bloodborne já estava no catálogo e o duplicado interno deve ser descartado")
+        XCTAssertEqual(response.duplicatesSkipped, 2)
+        let sekiro = try XCTUnwrap(response.items.first)
         XCTAssertEqual(sekiro.title, "Sekiro: Shadows Die Twice")
         XCTAssertEqual(sekiro.developer, "FromSoftware")
         XCTAssertNotNil(sekiro.releaseDate)
@@ -174,8 +175,8 @@ final class AutoCatalogTests: XCTestCase {
 
     func testSearchDropsDuplicatesInsideTheSameResultSet() async throws {
         Stub.handler = { _ in (200, ["Content-Type": "application/json"], self.rawgPayload) }
-        let results = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 5))
-        let titles = results.map { TitleNormalizer.normalize($0.title) }
+        let response = try await makeProvider().search(MetadataQuery(categories: ["acao"], limit: 5))
+        let titles = response.items.map { TitleNormalizer.normalize($0.title) }
         XCTAssertEqual(Set(titles).count, titles.count)
     }
 
@@ -206,7 +207,8 @@ final class AutoCatalogTests: XCTestCase {
             request: AutoCatalogRequest(categories: ["acao"], quantity: 5),
             existingGames: games
         )
-        XCTAssertEqual(outcome.duplicatesSkipped, 2)
+        // One Sekiro duplicate is dropped by the provider, the other by the assistant: both are counted.
+        XCTAssertEqual(outcome.duplicatesSkipped, 2, "duplicados devem ser contados, não silenciados")
         XCTAssertEqual(outcome.candidates.map(\.title), ["Bloodborne"])
     }
 
