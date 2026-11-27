@@ -62,7 +62,7 @@ public final class LocalHTTPFileServer {
 
         var address = sockaddr_in()
         address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = hostBoundPort(preferredPort).bigEndian
+        address.sin_port = preferredPort.bigEndian
         address.sin_addr.s_addr = inet_addr("0.0.0.0")
         let bindResult: Int32 = withUnsafePointer(to: &address) { pointer in
             pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockaddrPointer in
@@ -207,8 +207,6 @@ public final class LocalHTTPFileServer {
         return 0
         #endif
     }
-
-    private func hostBoundPort(_ port: UInt16) -> UInt16 { port }
 
     /// Best-effort local Wi-Fi IPv4 (en0 on iOS). Returns nil when only cellular is available.
     public static func currentWiFiAddress() -> String? {

@@ -220,10 +220,10 @@ public final class TransferEngine: @unchecked Sendable {
                 from: sourceURL,
                 to: localURL,
                 resumeFromByte: existing,
-                progress: { [weak self] written, reported in
+                progress: { [weak self, jobID = job.id] written, reported in
                     guard let self else { return }
                     let knownTotal = reported > 0 ? reported : max(total, written)
-                    self.emit(job.id, .downloadProgress(downloaded: written, total: knownTotal))
+                    self.emit(jobID, .downloadProgress(downloaded: written, total: knownTotal))
                 },
                 isCancelled: { [weak self] in
                     guard let self else { return true }
