@@ -3,15 +3,20 @@ on:
   push:
     branches: ["**"]
   workflow_dispatch:
+permissions:
+  contents: read
 jobs:
-  linux-swift:
+  core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: swift --version || true
-      - run: uname -a
-  macos:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-      - run: swift --version
+      - name: Toolchain info
+        run: swift --version | tee build.log
+      - name: Build (probe failure)
+        run: |
+          echo "This is a deliberate probe" >> build.log
+          echo "error: cannot find 'Foo' in scope" >> build.log
+          exit 1
+      - name: Publish diagnostics
+        if: failure()
+        run: python3 Tools/publish_log.py build.log "swift probe"
