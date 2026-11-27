@@ -223,7 +223,6 @@ public final class TransferEngine: @unchecked Sendable {
                 progress: { [weak self] written, reported in
                     guard let self else { return }
                     let knownTotal = reported > 0 ? reported : max(total, written)
-                    job.downloadedBytes = written
                     self.emit(job.id, .downloadProgress(downloaded: written, total: knownTotal))
                 },
                 isCancelled: { [weak self] in
@@ -266,20 +265,20 @@ public final class TransferEngine: @unchecked Sendable {
 
             job.state = .transferring
             emit(job.id, .state(.transferring, message: "Enviando para \(job.consoleName)…"))
-            let result = try uploadWithMetrics(client: client, job: job, localURL: localURL)
+            let uploadResult = try uploadWithMetrics(client: client, job: job, localURL: localURL)
 
             // 4. Optional verification, only when the server actually implements SIZE.
             if configuration.verifyRemoteSizeWhenAvailable,
                let remoteSize = client.remoteFileSize(job.remoteFileName),
-               remoteSize != result {
+               remoteSize != uploadResult {
                 throw FTPError.unexpectedReply(
                     command: "SIZE",
-                    reply: "o arquivo remoto tem \(remoteSize) bytes, esperado \(result)"
+                    reply: "o arquivo remoto tem \(remoteSize) bytes, esperado \(uploadResult)"
                 )
             }
             client.quitSilently()
 
-            job.uploadedBytes = result
+            job.uploadedBytes = uploadResult
             job.state = .completed
             job.finishedAt = Date()
             job.message = "Envio concluído com sucesso."
@@ -327,7 +326,6 @@ public final class TransferEngine: @unchecked Sendable {
             remoteName: job.remoteFileName,
             progress: { [weak self] sent, total in
                 guard let self else { return }
-                job.uploadedBytes = sent
                 self.emit(job.id, .uploadProgress(uploaded: sent, total: total))
                 let now = Date()
                 windowBytes = sent
