@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Painel Administrativo — protegido por senha, com cadastro/edição/exclusão de jogos.
 /// Todos os dados são locais (JSON no iPhone); nada depende de servidor pago.

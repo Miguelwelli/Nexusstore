@@ -20,6 +20,11 @@ jobs:
         run: |
           python3 Tools/verify_xcodeproj.py
           python3 Tools/check_swift_style.py
+      - name: Parse every Swift file with swift-syntax
+        run: |
+          FILES=$(find NexusStore Tests -name '*.swift' | sort)
+          echo "$FILES" | wc -l
+          swift Tools/ci/ParseSwift.swift $FILES 2>&1 | tee parse.log
       - name: Build core library
         run: |
           echo "Swift toolchain: $(swift --version 2>&1 | head -1)" > build.log
@@ -32,6 +37,7 @@ jobs:
       - name: Publish diagnostics
         if: failure()
         run: |
+          cat parse.log >> build.log 2>/dev/null || true
           python3 Tools/extract_diagnostics.py build.log errors.log
           python3 Tools/publish_log.py errors.log "swift core"
 

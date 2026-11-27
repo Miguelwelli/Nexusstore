@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Individual game page: banner, title, stats, connection status, description, metadata,
 /// screenshots and the "ENVIAR PARA PS4" action.

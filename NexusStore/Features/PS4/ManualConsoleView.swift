@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Manual console configuration — required whenever DDP discovery is blocked (guest Wi-Fi, standby,
 /// no FTP server). Every field is validated before saving, and the test is a real FTP login.

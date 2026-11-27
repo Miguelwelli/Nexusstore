@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Renders cover/banner artwork with a graceful fallback.
 ///

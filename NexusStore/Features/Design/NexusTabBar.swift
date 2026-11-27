@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The five navigation destinations from the product reference.
 public enum AppSection: String, CaseIterable, Identifiable, Hashable {
