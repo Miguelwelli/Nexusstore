@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import NexusStoreCore
 
@@ -55,6 +56,18 @@ final class FTPIntegrationTests: XCTestCase {
         let listing = try client.listDirectory()
         XCTAssertTrue(listing.contains { $0.name == remoteName }, "uploaded file must appear in LIST")
         client.quitSilently()
+
+        // Durability + integrity proof, straight from the server's data directory when it is exposed
+        // (the CI job mounts it in /tmp/ftproot). Comparing bytes catches truncation/corruption that a
+        // length check alone would miss.
+        let remoteRoot = ProcessInfo.processInfo.environment["NEXUS_FTP_ROOT"] ?? "/tmp/ftproot"
+        let storedFile = URL(fileURLWithPath: remoteRoot).appendingPathComponent(remoteName)
+        if FileManager.default.fileExists(atPath: storedFile.path) {
+            let stored = try Data(contentsOf: storedFile)
+            XCTAssertEqual(stored.count, payload.count, "remote file must have the exact size")
+            XCTAssertEqual(stored, payload, "remote bytes must match the local package")
+            try? FileManager.default.removeItem(at: storedFile)
+        }
     }
 
     func testWrongPasswordIsRejectedByRealServer() throws {

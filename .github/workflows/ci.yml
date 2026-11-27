@@ -58,6 +58,7 @@ jobs:
           NEXUS_FTP_PORT: "2121"
           NEXUS_FTP_USER: ps4
           NEXUS_FTP_PASSWORD: ps4
+          NEXUS_FTP_ROOT: /tmp/ftproot
         run: |
           set -o pipefail
           swift test --filter FTPIntegrationTests -v 2>&1 | tee integration.log
@@ -67,3 +68,8 @@ jobs:
           cat /tmp/ftp.log || true
           python3 Tools/extract_diagnostics.py integration.log integration-errors.log
           python3 Tools/publish_log.py integration-errors.log "ftp integration"
+      - name: Publish integration summary
+        if: always()
+        run: |
+          python3 Tools/extract_diagnostics.py integration.log integration-summary.log
+          python3 Tools/publish_log.py integration-summary.log "ftp integration summary" || true
