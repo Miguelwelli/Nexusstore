@@ -6,6 +6,7 @@ struct HomeView: View {
     @ObservedObject var catalog: CatalogStore
     @ObservedObject var transfers: TransferCoordinator
     @ObservedObject var router: AppRouter
+    @ObservedObject var settings: SettingsStore
 
     @State private var selectedCategory: String? = nil
     @State private var showAllPopular = false
@@ -41,6 +42,12 @@ struct HomeView: View {
         .background(NexusBackground())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            if selectedCategory == nil { selectedCategory = settings.value.homeCategory }
+        }
+        .onChange(of: selectedCategory) { newValue in
+            settings.setHomeCategory(newValue)
+        }
     }
 
     // MARK: - Header

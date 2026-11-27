@@ -6,6 +6,7 @@ struct CategoriesView: View {
     @ObservedObject var router: AppRouter
 
     @State private var selected: GameCategory?
+    @State private var showCategory = false
     @State private var showFavorites = false
     @State private var showRecents = false
 
@@ -23,6 +24,7 @@ struct CategoriesView: View {
                     ForEach(GameCategory.all) { category in
                         CategoryCard(category: category, count: catalog.count(for: category.rawValue)) {
                             selected = category
+                            showCategory = true
                         }
                     }
                 }
@@ -47,14 +49,16 @@ struct CategoriesView: View {
         }
         .background(NexusBackground())
         .toolbar(.hidden, for: .navigationBar)
-        .navigationDestination(item: $selected) { category in
-            CatalogView(
-                catalog: catalog,
-                router: router,
-                initialCategory: category.rawValue,
-                title: category.title,
-                subtitle: "Jogos em \(category.title)"
-            )
+        .navigationDestination(isPresented: $showCategory) {
+            if let selected {
+                CatalogView(
+                    catalog: catalog,
+                    router: router,
+                    initialCategory: selected.rawValue,
+                    title: selected.title,
+                    subtitle: "Jogos em \(selected.title)"
+                )
+            }
         }
         .navigationDestination(isPresented: $showFavorites) {
             FavoritesView(catalog: catalog, router: router)

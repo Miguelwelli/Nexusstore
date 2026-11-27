@@ -39,12 +39,13 @@ struct GameDetailView: View {
         }
         .sheet(isPresented: $showingSendOptions) {
             if let game {
-                SendToConsoleSheet(game: game, discovery: discovery, transfers: transfers) { message in
-                    showingSendOptions = false
-                    toast = message
+                NexusSheetChrome {
+                    SendToConsoleSheet(game: game, discovery: discovery, transfers: transfers) { message in
+                        showingSendOptions = false
+                        toast = message
+                    }
                 }
                 .presentationDetents([.medium])
-                .presentationBackground(NexusTheme.Palette.backgroundElevated)
             }
         }
         .alert("Não foi possível enviar", isPresented: Binding(

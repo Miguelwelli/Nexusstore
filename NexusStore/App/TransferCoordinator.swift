@@ -67,7 +67,7 @@ public final class TransferCoordinator: ObservableObject {
             return false
         }
         let requiredSpace = game.byteCount
-        let free = AppStorage.freeDiskSpace()
+        let free = NexusFileStorage.freeDiskSpace()
         if requiredSpace > 0, free > 0, free < requiredSpace + 256 * 1024 * 1024 {
             lastError = "Espaço insuficiente no iPhone para baixar \(ByteFormatting.formatSize(requiredSpace)). Libere espaço e tente novamente."
             return false

@@ -6,6 +6,7 @@ struct RootView: View {
     @ObservedObject var transfers: TransferCoordinator
     @ObservedObject var discovery: PS4ConnectionService
     @ObservedObject var router: AppRouter
+    @ObservedObject var settings: SettingsStore
     let preferences: PreferencesStore
 
     var body: some View {
@@ -16,7 +17,7 @@ struct RootView: View {
                 switch router.section {
                 case .home:
                     NavigationStack(path: $router.homePath) {
-                        HomeView(catalog: catalog, transfers: transfers, router: router)
+                        HomeView(catalog: catalog, transfers: transfers, router: router, settings: settings)
                             .navigationDestination(for: Game.self) { game in
                                 GameDetailView(gameID: game.id, catalog: catalog, transfers: transfers, discovery: discovery, router: router)
                             }
@@ -37,7 +38,7 @@ struct RootView: View {
                     }
                 case .search:
                     NavigationStack(path: $router.searchPath) {
-                        SearchView(catalog: catalog, router: router, transfers: transfers, discovery: discovery, preferences: preferences)
+                        SearchView(catalog: catalog, router: router, preferences: preferences)
                             .navigationDestination(for: Game.self) { game in
                                 GameDetailView(gameID: game.id, catalog: catalog, transfers: transfers, discovery: discovery, router: router)
                             }

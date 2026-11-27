@@ -12,6 +12,7 @@
 		91D74A638A0FB678BE6E7B0F /* CatalogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CEFB71595C6D3777F283FEE /* CatalogStore.swift */; };
 		9DFE54BA8ABD4B6A842BF5E9 /* NexusStoreApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75008822765BC4B646948102 /* NexusStoreApp.swift */; };
 		A05AEDF979866C6FC52B948F /* PS4ConnectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3718110A2AF64A4533A61BD5 /* PS4ConnectionService.swift */; };
+		FCC9EAE591B0C140764EB066 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E3E40FFDD742B9928D3546 /* SettingsStore.swift */; };
 		FDD79CAD05955FC73615D4E1 /* TransferCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57A29C0F9D9C87489FB51BE9 /* TransferCoordinator.swift */; };
 		7672BBBF8B0FE8F2C50F462A /* CatalogRepository+Empty.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6AF50F7879312B1161F848 /* CatalogRepository+Empty.swift */; };
 		1F456BCE3D5B64E171E4E99A /* SeedCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 010F6713EFC3F670A201CA36 /* SeedCatalog.swift */; };
@@ -44,6 +45,7 @@
 		E644931F857F1EBC8BB7C89F /* NexusComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C23FDDB963BD345D1206C01 /* NexusComponents.swift */; };
 		E931C4C1663D367F9058BFA8 /* NexusTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 516C6BD30D209313C5260A9B /* NexusTabBar.swift */; };
 		DD5B042585388B3F96E3BF3A /* NexusTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F20E626611AC5DD5C35DBCF /* NexusTheme.swift */; };
+		B3637CA0157EF17581202270 /* SheetChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5826912C28E9BA3EEB5AFDFC /* SheetChrome.swift */; };
 		EA580803EB6F095DEFDFD8AA /* GameDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D568EBA818C7F21A31456DC7 /* GameDetailView.swift */; };
 		A45E72EF2A0051A1B6724D17 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D04DDE836669E3F400FF9A /* HomeView.swift */; };
 		57A8B1E09C3627682EE5F5B9 /* ManualConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E016DD77C454716F6FDD76B1 /* ManualConsoleView.swift */; };
@@ -74,6 +76,7 @@
 		1CEFB71595C6D3777F283FEE /* CatalogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/App/CatalogStore.swift; sourceTree = SOURCE_ROOT; };
 		75008822765BC4B646948102 /* NexusStoreApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/App/NexusStoreApp.swift; sourceTree = SOURCE_ROOT; };
 		3718110A2AF64A4533A61BD5 /* PS4ConnectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/App/PS4ConnectionService.swift; sourceTree = SOURCE_ROOT; };
+		C6E3E40FFDD742B9928D3546 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/App/SettingsStore.swift; sourceTree = SOURCE_ROOT; };
 		57A29C0F9D9C87489FB51BE9 /* TransferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/App/TransferCoordinator.swift; sourceTree = SOURCE_ROOT; };
 		EA6AF50F7879312B1161F848 /* CatalogRepository+Empty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Catalog/CatalogRepository+Empty.swift; sourceTree = SOURCE_ROOT; };
 		010F6713EFC3F670A201CA36 /* SeedCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Core/Catalog/SeedCatalog.swift; sourceTree = SOURCE_ROOT; };
@@ -106,6 +109,7 @@
 		1C23FDDB963BD345D1206C01 /* NexusComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Design/NexusComponents.swift; sourceTree = SOURCE_ROOT; };
 		516C6BD30D209313C5260A9B /* NexusTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Design/NexusTabBar.swift; sourceTree = SOURCE_ROOT; };
 		1F20E626611AC5DD5C35DBCF /* NexusTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Design/NexusTheme.swift; sourceTree = SOURCE_ROOT; };
+		5826912C28E9BA3EEB5AFDFC /* SheetChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Design/SheetChrome.swift; sourceTree = SOURCE_ROOT; };
 		D568EBA818C7F21A31456DC7 /* GameDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Detail/GameDetailView.swift; sourceTree = SOURCE_ROOT; };
 		54D04DDE836669E3F400FF9A /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/Home/HomeView.swift; sourceTree = SOURCE_ROOT; };
 		E016DD77C454716F6FDD76B1 /* ManualConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NexusStore/Features/PS4/ManualConsoleView.swift; sourceTree = SOURCE_ROOT; };
@@ -167,6 +171,7 @@
 				1CEFB71595C6D3777F283FEE /* CatalogStore.swift */,
 				75008822765BC4B646948102 /* NexusStoreApp.swift */,
 				3718110A2AF64A4533A61BD5 /* PS4ConnectionService.swift */,
+				C6E3E40FFDD742B9928D3546 /* SettingsStore.swift */,
 				57A29C0F9D9C87489FB51BE9 /* TransferCoordinator.swift */,
 			);
 			path = App;
@@ -299,6 +304,7 @@
 				1C23FDDB963BD345D1206C01 /* NexusComponents.swift */,
 				516C6BD30D209313C5260A9B /* NexusTabBar.swift */,
 				1F20E626611AC5DD5C35DBCF /* NexusTheme.swift */,
+				5826912C28E9BA3EEB5AFDFC /* SheetChrome.swift */,
 			);
 			path = Design;
 			sourceTree = "<group>";
@@ -449,6 +455,7 @@
 				91D74A638A0FB678BE6E7B0F /* CatalogStore.swift in Sources */,
 				9DFE54BA8ABD4B6A842BF5E9 /* NexusStoreApp.swift in Sources */,
 				A05AEDF979866C6FC52B948F /* PS4ConnectionService.swift in Sources */,
+				FCC9EAE591B0C140764EB066 /* SettingsStore.swift in Sources */,
 				FDD79CAD05955FC73615D4E1 /* TransferCoordinator.swift in Sources */,
 				7672BBBF8B0FE8F2C50F462A /* CatalogRepository+Empty.swift in Sources */,
 				1F456BCE3D5B64E171E4E99A /* SeedCatalog.swift in Sources */,
@@ -481,6 +488,7 @@
 				E644931F857F1EBC8BB7C89F /* NexusComponents.swift in Sources */,
 				E931C4C1663D367F9058BFA8 /* NexusTabBar.swift in Sources */,
 				DD5B042585388B3F96E3BF3A /* NexusTheme.swift in Sources */,
+				B3637CA0157EF17581202270 /* SheetChrome.swift in Sources */,
 				EA580803EB6F095DEFDFD8AA /* GameDetailView.swift in Sources */,
 				A45E72EF2A0051A1B6724D17 /* HomeView.swift in Sources */,
 				57A8B1E09C3627682EE5F5B9 /* ManualConsoleView.swift in Sources */,

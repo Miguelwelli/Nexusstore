@@ -87,19 +87,21 @@ struct AdminView: View {
             .padding(.top, 8)
         }
         .sheet(isPresented: $showAllGames) {
-            AdminGameListSheet(catalog: catalog, onEdit: { game in
-                showAllGames = false
-                startEditing(game)
-            }, onDelete: { game in
-                pendingDelete = game
-            })
+            NexusSheetChrome {
+                AdminGameListSheet(catalog: catalog, onEdit: { game in
+                    showAllGames = false
+                    startEditing(game)
+                }, onDelete: { game in
+                    pendingDelete = game
+                })
+            }
             .presentationDetents([.large])
-            .presentationBackground(NexusTheme.Palette.backgroundElevated)
         }
         .sheet(isPresented: $showChangePassword) {
-            ChangePasswordView(preferences: preferences, onDone: { toast = "Senha atualizada" })
-                .presentationDetents([.medium])
-                .presentationBackground(NexusTheme.Palette.backgroundElevated)
+            NexusSheetChrome {
+                ChangePasswordView(preferences: preferences, onDone: { toast = "Senha atualizada" })
+            }
+            .presentationDetents([.medium])
         }
     }
 
@@ -216,7 +218,7 @@ struct AdminView: View {
                 }
             } label: {
                 HStack {
-                    Text(draft.categories.isEmpty ? "Selecionar categoria" : draft.categories.map(GameCategory.title(for:)).joined(separator: " / "))
+                    Text(draft.categories.isEmpty ? "Selecionar categoria" : draft.categories.map { GameCategory.title(for: $0) }.joined(separator: " / "))
                         .font(.system(size: 14))
                         .foregroundStyle(draft.categories.isEmpty ? NexusTheme.Palette.textTertiary : NexusTheme.Palette.textPrimary)
                     Spacer()

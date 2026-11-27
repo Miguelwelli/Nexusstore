@@ -57,14 +57,15 @@ struct CatalogView: View {
             }
         }
         .sheet(isPresented: $showFilters) {
-            FiltersSheet(
-                selected: $selectedCategories,
-                sort: $sort,
-                favoritesOnly: $favoritesOnly,
-                total: catalog.games.count
-            )
+            NexusSheetChrome {
+                FiltersSheet(
+                    selected: $selectedCategories,
+                    sort: $sort,
+                    favoritesOnly: $favoritesOnly,
+                    total: catalog.games.count
+                )
+            }
             .presentationDetents([.medium, .large])
-            .presentationBackground(NexusTheme.Palette.backgroundElevated)
         }
     }
 
@@ -186,6 +187,11 @@ struct CatalogView: View {
     private var grid: some View {
         Group {
             if results.isEmpty {
+                let clearAction: (() -> Void)? = activeFilterCount > 0 ? {
+                    searchText = ""
+                    selectedCategories.removeAll()
+                    favoritesOnly = false
+                } : nil
                 EmptyStateView(
                     icon: "magnifyingglass",
                     title: "Nenhum jogo encontrado",
@@ -193,11 +199,7 @@ struct CatalogView: View {
                         ? "Ajuste os filtros ou cadastre novos jogos no painel administrativo."
                         : "Nenhum resultado para “\(searchText)”. Tente outro termo.",
                     actionTitle: activeFilterCount > 0 ? "Limpar filtros" : nil,
-                    action: activeFilterCount > 0 ? {
-                        searchText = ""
-                        selectedCategories.removeAll()
-                        favoritesOnly = false
-                    } : nil
+                    action: clearAction
                 )
             } else {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 18)], spacing: 20) {

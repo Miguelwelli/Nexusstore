@@ -8,6 +8,7 @@ struct NexusStoreApp: App {
     @StateObject private var discovery: PS4ConnectionService
     @StateObject private var router = AppRouter()
     @StateObject private var session = AdminSession()
+    @StateObject private var settings: SettingsStore
 
     private let environment: AppEnvironment
 
@@ -17,6 +18,7 @@ struct NexusStoreApp: App {
         _catalog = StateObject(wrappedValue: CatalogStore(repository: environment.catalog))
         _transfers = StateObject(wrappedValue: environment.transfers)
         _discovery = StateObject(wrappedValue: environment.discovery)
+        _settings = StateObject(wrappedValue: environment.settings)
     }
 
     var body: some Scene {
@@ -26,9 +28,11 @@ struct NexusStoreApp: App {
                 transfers: transfers,
                 discovery: discovery,
                 preferences: environment.preferences,
-                router: router
+                router: router,
+                settings: settings
             )
             .environmentObject(session)
+            .environmentObject(settings)
             .preferredColorScheme(.dark)
             .tint(NexusTheme.Palette.redBright)
         }

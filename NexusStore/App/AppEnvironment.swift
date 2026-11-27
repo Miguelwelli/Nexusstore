@@ -2,11 +2,14 @@ import Foundation
 
 /// Resolves the on-device storage locations used by the app.
 ///
+/// Named `NexusFileStorage` (not `AppStorage`) to avoid clashing with SwiftUI's `AppStorage` property
+/// wrapper, which would be ambiguous at every call site.
+///
 /// - Catalog, consoles and settings live in `Application Support/NexusStore/` (backed up, not
 ///   user-visible).
 /// - Temporary `.pkg` files live in `Caches/NexusStore/Transfers/` so iOS can purge them if the
 ///   device is short on space; the app checks the free space before starting a download anyway.
-public enum AppStorage {
+public enum NexusFileStorage {
 
     public static var applicationSupport: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
@@ -23,6 +26,7 @@ public enum AppStorage {
     public static var catalogFile: URL { applicationSupport.appendingPathComponent("catalog.json") }
     public static var consolesFile: URL { applicationSupport.appendingPathComponent("consoles.json") }
     public static var preferencesFile: URL { applicationSupport.appendingPathComponent("preferences.json") }
+    public static var settingsFile: URL { applicationSupport.appendingPathComponent("settings.json") }
     public static var transfersDirectory: URL { caches.appendingPathComponent("Transfers", isDirectory: true) }
 
     public static func prepare() {
@@ -50,28 +54,30 @@ public final class AppEnvironment {
     public let preferences: PreferencesStore
     public let transfers: TransferCoordinator
     public let discovery: PS4ConnectionService
+    public let settings: SettingsStore
 
     public init() {
-        AppStorage.prepare()
+        NexusFileStorage.prepare()
         let catalogRepository: CatalogRepository
         do {
             catalogRepository = try CatalogRepository(
-                fileURL: AppStorage.catalogFile,
+                fileURL: NexusFileStorage.catalogFile,
                 seed: DemoCatalogBridge.loadFromMainBundle()
             )
         } catch {
             // A corrupted catalog must never prevent the app from launching: start empty and let the
             // admin panel recreate the data. The failure is surfaced in the admin screen.
-            catalogRepository = (try? CatalogRepository(fileURL: AppStorage.catalogFile)) ?? CatalogRepository.empty()
+            catalogRepository = (try? CatalogRepository(fileURL: NexusFileStorage.catalogFile)) ?? CatalogRepository.empty()
         }
         catalog = catalogRepository
-        consoles = ConsoleRepository(fileURL: AppStorage.consolesFile)
-        preferences = PreferencesStore(fileURL: AppStorage.preferencesFile)
+        consoles = ConsoleRepository(fileURL: NexusFileStorage.consolesFile)
+        preferences = PreferencesStore(fileURL: NexusFileStorage.preferencesFile)
         transfers = TransferCoordinator(
-            workingDirectory: AppStorage.transfersDirectory,
+            workingDirectory: NexusFileStorage.transfersDirectory,
             configuration: preferences.value.transferConfiguration
         )
         discovery = PS4ConnectionService(consoles: consoles)
+        settings = SettingsStore(fileURL: NexusFileStorage.settingsFile)
     }
 }
 

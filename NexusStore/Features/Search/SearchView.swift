@@ -4,13 +4,11 @@ import SwiftUI
 struct SearchView: View {
     @ObservedObject var catalog: CatalogStore
     @ObservedObject var router: AppRouter
-    @ObservedObject var transfers: TransferCoordinator
-    @ObservedObject var discovery: PS4ConnectionService
     let preferences: PreferencesStore
 
     @EnvironmentObject private var session: AdminSession
+    @EnvironmentObject private var settings: SettingsStore
     @State private var query = ""
-    @State private var recentSearches: [String] = []
     @State private var showAdmin = false
     @FocusState private var isFocused: Bool
 
@@ -107,18 +105,18 @@ struct SearchView: View {
 
     private var suggestions: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if !recentSearches.isEmpty {
+            if !settings.value.recentSearches.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Buscas recentes")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(NexusTheme.Palette.textPrimary)
                         Spacer()
-                        Button("Limpar") { recentSearches.removeAll() }
+                        Button("Limpar") { settings.clearSearches() }
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(NexusTheme.Palette.redBright)
                     }
-                    ForEach(recentSearches, id: \.self) { term in
+                    ForEach(settings.value.recentSearches, id: \.self) { term in
                         Button {
                             query = term
                             commitSearch()
@@ -270,9 +268,7 @@ struct SearchView: View {
     private func commitSearch() {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard term.count >= 2 else { return }
-        recentSearches.removeAll { $0.caseInsensitiveCompare(term) == .orderedSame }
-        recentSearches.insert(term, at: 0)
-        recentSearches = Array(recentSearches.prefix(6))
+        settings.recordSearch(term)
         isFocused = false
     }
 }
