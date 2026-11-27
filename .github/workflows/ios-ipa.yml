@@ -1,8 +1,9 @@
 name: iOS build + IPA
 
+# macOS runners are not assigned in this environment (jobs are cancelled without a runner), so this
+# workflow is manual-only and exists for whoever has runner capacity: it produces an UNSIGNED ipa that
+# still needs signing with the user's Apple certificate before it can be installed on a device.
 on:
-  push:
-    branches: ["**"]
   workflow_dispatch:
 
 permissions:
