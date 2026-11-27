@@ -16,10 +16,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Swift toolchain
         run: swift --version
+      - name: Project + source guards
+        run: |
+          python3 Tools/verify_xcodeproj.py
+          python3 Tools/check_swift_style.py
       - name: Build core library
         run: |
+          echo "Swift toolchain: $(swift --version 2>&1 | head -1)" > build.log
           set -o pipefail
-          swift build -v 2>&1 | tee build.log
+          swift build -v 2>&1 | tee -a build.log
       - name: Run unit tests
         run: |
           set -o pipefail
