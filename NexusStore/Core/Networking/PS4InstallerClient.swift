@@ -62,21 +62,18 @@ public final class PS4InstallerClient: @unchecked Sendable {
         request.timeoutInterval = 60 * 60
 
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Result?
-        var failure: Error?
-        let stateQueue = DispatchQueue(label: "com.nexusstore.installer.state")
+        let resultBox = ResultBox<Result>()
+        let failureBox = ResultBox<Error>()
 
         let task = session.uploadTask(with: request, fromFile: bodyURL) { data, response, error in
             defer { semaphore.signal() }
             if let error {
-                stateQueue.sync { failure = SendError.uploadFailed(error.localizedDescription) }
+                failureBox.set(SendError.uploadFailed(error.localizedDescription))
                 return
             }
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
             let body = String(data: data ?? Data(), encoding: .utf8) ?? ""
-            stateQueue.sync {
-                result = Result(statusCode: code, body: body, succeeded: (200..<300).contains(code))
-            }
+            resultBox.set(Result(statusCode: code, body: body, succeeded: (200..<300).contains(code)))
         }
         task.resume()
         while semaphore.wait(timeout: .now() + 0.5) == .timedOut {
@@ -85,10 +82,8 @@ public final class PS4InstallerClient: @unchecked Sendable {
                 throw SendError.cancelled
             }
         }
-        var outcome: Result?
-        stateQueue.sync { outcome = result; if failure == nil, result == nil { failure = SendError.cancelled } }
-        if let failure { throw failure }
-        guard let outcome else { throw SendError.cancelled }
+        if let failure = failureBox.get() { throw failure }
+        guard let outcome = resultBox.get() else { throw SendError.cancelled }
         guard outcome.succeeded else {
             throw SendError.installerRejected(status: outcome.statusCode, body: outcome.body)
         }

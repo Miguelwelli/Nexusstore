@@ -174,7 +174,7 @@ public final class LocalHTTPFileServer {
         if method == "HEAD" { return }
 
         while true {
-            guard let chunk = try? handle.read(upToCount: 256 * 1024), let chunk, !chunk.isEmpty else { break }
+            guard let chunk = (try? handle.read(upToCount: 256 * 1024)) ?? nil, !chunk.isEmpty else { break }
             guard sendAll(client, chunk) else { return }
         }
     }
@@ -223,7 +223,9 @@ public final class LocalHTTPFileServer {
                 let name = String(cString: interface.ifa_name)
                 if name == "en0" || name == "en1" || name.hasPrefix("eth") {
                     var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                    if getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
+                    var addrCopy = interface.ifa_addr.pointee
+                    let addressLength = socklen_t(MemoryLayout<sockaddr_in>.size)
+                    if getnameinfo(&addrCopy, addressLength,
                                    &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST) == 0 {
                         let value = String(cString: host)
                         if !value.isEmpty && !value.hasPrefix("169.254") { addresses.append(value) }

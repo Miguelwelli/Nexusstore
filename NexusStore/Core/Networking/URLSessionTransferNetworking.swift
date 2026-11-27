@@ -3,47 +3,87 @@ import Foundation
 import FoundationNetworking
 #endif
 
+/// A tiny thread-safe box used to share results between URLSession callbacks and the waiting caller.
+/// Using an explicit box (instead of captured `var`s) keeps the code valid under the Swift 6
+/// concurrency rules the app is built with.
+public final class ResultBox<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: Value?
+
+    public init(_ initial: Value? = nil) { storage = initial }
+
+    public func set(_ value: Value) {
+        lock.lock(); defer { lock.unlock() }
+        storage = value
+    }
+
+    public func get() -> Value? {
+        lock.lock(); defer { lock.unlock() }
+        return storage
+    }
+}
+
 /// Streaming HTTPS downloader used by the transfer engine.
 ///
-/// - Writes to disk in 256 KiB chunks (`FileHandle`) — a 100 GB package never sits in memory.
-/// - Supports HTTP resume (`Range: bytes=N-`) and validates the `206 Partial Content` answer, falling
-///   back to a clean restart when the server ignores the range (otherwise the file would be corrupt).
-/// - Reports progress through the callback; cancellation is cooperative and checked per chunk.
-/// - Requests disk space up front when the server advertises `Content-Length`, failing with a clear
-///   message instead of crashing mid-transfer when the iPhone is full.
-public final class URLSessionTransferNetworking: TransferNetworking, @unchecked Sendable {
+/// - Uses `URLSessionDownloadTask`, which writes the payload straight to a temporary file — a 100 GB
+///   package never sits in memory.
+/// - Reports live progress through `URLSessionDownloadDelegate.didWriteData`.
+/// - Supports HTTP resume (`Range: bytes=N-`); if the server ignores the range the partial file is
+///   discarded and the download restarts, never leaving a corrupt package behind.
+/// - Checks free disk space up front, failing with a clear message instead of dying mid-transfer.
+/// - Cancellation is cooperative and checked while the task runs.
+public final class URLSessionTransferNetworking: NSObject, TransferNetworking, URLSessionDownloadDelegate, @unchecked Sendable {
 
-    private let session: URLSession
-
-    public init(session: URLSession? = nil) {
-        if let session {
-            self.session = session
-        } else {
-            let configuration = URLSessionConfiguration.default
-            configuration.timeoutIntervalForRequest = 30
-            configuration.timeoutIntervalForResource = 60 * 60 * 12
-            configuration.waitsForConnectivity = false
-            self.session = URLSession(configuration: configuration)
-        }
+    public enum DownloadError: Error, Equatable {
+        case serverIgnoredRange
+        case httpStatus(Int)
+        case diskSpace(String)
+        case write(String)
     }
+
+    private struct TaskContext {
+        var destination: URL
+        var resumeOffset: Int64
+        var progress: @Sendable (Int64, Int64) -> Void
+        var semaphore: DispatchSemaphore
+        var failure: ResultBox<Error>
+        var finalSize: ResultBox<Int64>
+    }
+
+    private let lock = NSLock()
+    private var contexts: [Int: TaskContext] = [:]
+    private var session: URLSession!
+
+    public init(configuration: URLSessionConfiguration? = nil) {
+        super.init()
+        let configuration = configuration ?? URLSessionConfiguration.default
+        configuration.timeoutIntervalForRequest = 30
+        configuration.timeoutIntervalForResource = 60 * 60 * 12
+        #if !canImport(FoundationNetworking)
+        configuration.waitsForConnectivity = false
+        #endif
+        session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+    }
+
+    // MARK: - TransferNetworking
 
     public func fileSize(for url: URL) -> Int64? {
         var request = URLRequest(url: url)
         request.httpMethod = "HEAD"
         request.timeoutInterval = 20
         let semaphore = DispatchSemaphore(value: 0)
-        var size: Int64?
+        let box = ResultBox<Int64>()
         let task = session.dataTask(with: request) { _, response, _ in
             if let http = response as? HTTPURLResponse,
                let length = http.value(forHTTPHeaderField: "Content-Length"),
                let value = Int64(length), value > 0 {
-                size = value
+                box.set(value)
             }
             semaphore.signal()
         }
         task.resume()
         _ = semaphore.wait(timeout: .now() + 25)
-        return size
+        return box.get()
     }
 
     public func download(
@@ -58,7 +98,7 @@ public final class URLSessionTransferNetworking: TransferNetworking, @unchecked 
         while true {
             attempt += 1
             do {
-                return try streamDownload(
+                return try runTask(
                     from: remote,
                     to: destination,
                     resumeOffset: resumeOffset,
@@ -66,22 +106,13 @@ public final class URLSessionTransferNetworking: TransferNetworking, @unchecked 
                     isCancelled: isCancelled
                 )
             } catch let error as DownloadError where error == .serverIgnoredRange && attempt == 1 {
-                // Server does not support Range: restart from scratch.
                 try? FileManager.default.removeItem(at: destination)
                 resumeOffset = 0
-                continue
             }
         }
     }
 
-    enum DownloadError: Error, Equatable {
-        case serverIgnoredRange
-        case httpStatus(Int)
-        case diskSpace(String)
-        case write(String)
-    }
-
-    private func streamDownload(
+    private func runTask(
         from remote: URL,
         to destination: URL,
         resumeOffset: Int64,
@@ -93,122 +124,104 @@ public final class URLSessionTransferNetworking: TransferNetworking, @unchecked 
         if resumeOffset > 0 {
             request.setValue("bytes=\(resumeOffset)-", forHTTPHeaderField: "Range")
         }
-
-        let semaphore = DispatchSemaphore(value: 0)
-        let stateQueue = DispatchQueue(label: "com.nexusstore.download.state")
-        var thrown: Error?
-        var finalSize: Int64 = 0
-        var finished = false
-
-        let task = session.dataTask(with: request) { data, response, error in
-            defer {
-                stateQueue.sync { finished = true }
-                semaphore.signal()
-            }
-            if let error {
-                stateQueue.sync { thrown = error }
-                return
-            }
-            guard let http = response as? HTTPURLResponse else {
-                stateQueue.sync { thrown = DownloadError.httpStatus(-1) }
-                return
-            }
-            guard (200..<300).contains(http.statusCode) else {
-                stateQueue.sync { thrown = DownloadError.httpStatus(http.statusCode) }
-                return
-            }
-            let isPartial = http.statusCode == 206
-            if resumeOffset > 0 && !isPartial {
-                stateQueue.sync { thrown = DownloadError.serverIgnoredRange }
-                return
-            }
-            let contentLength = Int64(http.value(forHTTPHeaderField: "Content-Length") ?? "") ?? 0
-            let total = contentLength + (isPartial ? resumeOffset : 0)
-
-            // Reserve disk space up front when we know the size.
-            if total > 0, isPartial == false || resumeOffset == 0 {
-                if let attributes = try? FileManager.default.attributesOfFileSystem(forPath: destination.deletingLastPathComponent().path),
-                   let free = (attributes[.systemFreeSize] as? NSNumber)?.int64Value,
-                   free < contentLength + 64 * 1024 * 1024 {
-                    stateQueue.sync {
-                        thrown = DownloadError.diskSpace("Espaço insuficiente no iPhone para baixar \(ByteFormatting.formatSize(contentLength)).")
-                    }
-                    return
-                }
-            }
-
-            let handle: FileHandle
-            do {
-                if !FileManager.default.fileExists(atPath: destination.path) {
-                    FileManager.default.createFile(atPath: destination.path, contents: nil)
-                }
-                handle = try FileHandle(forWritingTo: destination)
-                if isPartial {
-                    try handle.seekToEnd()
-                } else {
-                    try handle.truncate(atOffset: 0)
-                }
-            } catch {
-                stateQueue.sync { thrown = DownloadError.write(error.localizedDescription) }
-                return
-            }
-            defer { try? handle.close() }
-
-            var written = resumeOffset
-            var buffer = Data()
-            buffer.reserveCapacity(512 * 1024)
-            // `data` is delivered in chunks by URLSession; flush in ~256 KiB blocks so memory use is
-            // bounded even for very large packages.
-            var chunkIndex = 0
-            write: for byte in data ?? Data() {
-                if isCancelled() {
-                    stateQueue.sync { thrown = FTPError.cancelled }
-                    task.cancel()
-                    return
-                }
-                buffer.append(byte)
-                chunkIndex += 1
-                if buffer.count >= 256 * 1024 {
-                    do { try handle.write(contentsOf: buffer) } catch {
-                        stateQueue.sync { thrown = DownloadError.write(error.localizedDescription) }
-                        return
-                    }
-                    written += Int64(buffer.count)
-                    buffer.removeAll(keepingCapacity: true)
-                    progress(written, total)
-                }
-            }
-            if !buffer.isEmpty {
-                do { try handle.write(contentsOf: buffer) } catch {
-                    stateQueue.sync { thrown = DownloadError.write(error.localizedDescription) }
-                    return
-                }
-                written += Int64(buffer.count)
-                progress(written, total)
-            }
-            stateQueue.sync { finalSize = written }
-        }
+        let task = session.downloadTask(with: request)
+        let context = TaskContext(
+            destination: destination,
+            resumeOffset: resumeOffset,
+            progress: progress,
+            semaphore: DispatchSemaphore(value: 0),
+            failure: ResultBox<Error>(),
+            finalSize: ResultBox<Int64>()
+        )
+        lock.lock()
+        contexts[task.taskIdentifier] = context
+        lock.unlock()
 
         task.resume()
-        // Wait for the request to finish; poll cancellation so a cancel is noticed even while the
-        // server is silent.
-        while semaphore.wait(timeout: .now() + 0.5) == .timedOut {
-            let done = stateQueue.sync { finished }
-            if isCancelled() && !done {
-                task.cancel()
-            }
-            if done { break }
+        while context.semaphore.wait(timeout: .now() + 0.4) == .timedOut {
+            if isCancelled() { task.cancel() }
         }
+        lock.lock()
+        contexts.removeValue(forKey: task.taskIdentifier)
+        lock.unlock()
 
-        var outcome: Error?
-        var size: Int64 = 0
-        stateQueue.sync {
-            outcome = thrown
-            size = finalSize
-            if size == 0 { size = Self.localSize(destination) }
+        if let error = context.failure.get() {
+            if let downloadError = error as? DownloadError { throw downloadError }
+            throw error
         }
-        if let outcome { throw outcome }
-        return size
+        if let size = context.finalSize.get(), size > 0 { return size }
+        return Self.localSize(destination)
+    }
+
+    // MARK: - URLSessionDownloadDelegate
+
+    public func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didWriteData bytesWritten: Int64,
+        totalBytesWritten: Int64,
+        totalBytesExpectedToWrite: Int64
+    ) {
+        lock.lock()
+        let context = contexts[downloadTask.taskIdentifier]
+        lock.unlock()
+        guard let context else { return }
+        let expected = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : 0
+        context.progress(totalBytesWritten + context.resumeOffset, expected + context.resumeOffset)
+    }
+
+    public func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didFinishDownloadingTo location: URL
+    ) {
+        lock.lock()
+        let context = contexts[downloadTask.taskIdentifier]
+        lock.unlock()
+        guard let context else { return }
+        do {
+            guard let http = downloadTask.response as? HTTPURLResponse else {
+                throw DownloadError.httpStatus(-1)
+            }
+            guard (200..<300).contains(http.statusCode) else {
+                throw DownloadError.httpStatus(http.statusCode)
+            }
+            let isPartial = http.statusCode == 206
+            if context.resumeOffset > 0 && !isPartial {
+                throw DownloadError.serverIgnoredRange
+            }
+            if !FileManager.default.fileExists(atPath: context.destination.path) {
+                FileManager.default.createFile(atPath: context.destination.path, contents: nil)
+            }
+            let output = try FileHandle(forWritingTo: context.destination)
+            defer { try? output.close() }
+            if isPartial {
+                try output.seekToEnd()
+            } else {
+                try output.truncate(atOffset: 0)
+            }
+            let input = try FileHandle(forReadingFrom: location)
+            defer { try? input.close() }
+            var written: Int64 = 0
+            while let chunk = (try? input.read(upToCount: 1024 * 1024)) ?? nil, !chunk.isEmpty {
+                try output.write(contentsOf: chunk)
+                written += Int64(chunk.count)
+            }
+            context.finalSize.set(written + context.resumeOffset)
+        } catch {
+            context.failure.set(error)
+        }
+    }
+
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        lock.lock()
+        let context = contexts[task.taskIdentifier]
+        lock.unlock()
+        guard let context else { return }
+        if let error, context.failure.get() == nil {
+            context.failure.set(error)
+        }
+        context.semaphore.signal()
     }
 
     private static func localSize(_ url: URL) -> Int64 {
