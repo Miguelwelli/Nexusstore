@@ -169,8 +169,8 @@ public final class TransferEngine: @unchecked Sendable {
             lock.unlock()
             job.state = .cancelled
             job.message = "Removida da fila."
-            emit(job.id, .finished(job))
             emitState(job.id, .cancelled, job.message)
+            emit(job.id, .finished(job))
             return
         }
         lock.unlock()

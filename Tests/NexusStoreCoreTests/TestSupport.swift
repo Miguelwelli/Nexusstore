@@ -66,6 +66,8 @@ final class FakeNetworking: TransferNetworking, @unchecked Sendable {
     var reportedSize: Int64?
     var failWith: Error?
     var chunkSize = 8
+    /// Delay inserted before each chunk; lets tests observe a running job deterministically.
+    var chunkDelay: TimeInterval = 0
     var downloads: [(URL, Int64)] = []
 
     init(payload: Data, reportedSize: Int64? = nil) {
@@ -98,6 +100,7 @@ final class FakeNetworking: TransferNetworking, @unchecked Sendable {
         var index = remaining.startIndex
         while index < remaining.endIndex {
             if isCancelled() { throw FTPError.cancelled }
+            if chunkDelay > 0 { Thread.sleep(forTimeInterval: chunkDelay) }
             let end = remaining.index(index, offsetBy: chunkSize, limitedBy: remaining.endIndex) ?? remaining.endIndex
             output.append(contentsOf: remaining[index..<end])
             index = end

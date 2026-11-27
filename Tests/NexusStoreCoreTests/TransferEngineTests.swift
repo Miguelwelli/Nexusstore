@@ -82,8 +82,9 @@ final class TransferEngineTests: XCTestCase {
 
         // 1 control socket for the engine's FTP session + 1 data socket.
         let control = ScriptedSocket(responses: [
-            "220 ready\r\n",
-            "215 UNIX Type: L8\r\n",                                  // SYST
+            "220 ready\r\n",                                          // greeting
+            "230 anonymous ok\r\n",                                   // USER
+            "215 UNIX Type: L8\r\n",                                   // SYST
             "200 Type set to I\r\n",                                   // TYPE I
             "227 Entering Passive Mode (127,0,0,1,196,52)\r\n",        // PASV
             "150 go\r\n",                                              // STOR accepted
@@ -158,24 +159,31 @@ final class TransferEngineTests: XCTestCase {
     }
 
     func testCancelWhileQueuedProducesCancelledResult() throws {
-        let engine = TransferEngine(workingDirectory: workDirectory, networking: FakeNetworking(payload: Data(), reportedSize: 10), ftpProvider: ScriptedProvider([]))
+        // A slow (but real) download keeps the first job busy so the second stays queued.
+        let slowNetwork = FakeNetworking(payload: Data(repeating: 0x3, count: 64), reportedSize: 64)
+        slowNetwork.chunkDelay = 0.05
+        let engine = TransferEngine(workingDirectory: workDirectory, networking: slowNetwork, ftpProvider: ScriptedProvider([]))
         let collector = EventCollector()
         engine.setEventHandler { collector.record($0, $1) }
         let first = makeJob()
         let second = makeJob()
         engine.enqueue(first)
         engine.enqueue(second)
-        // Give the queue a moment to start the first job, then cancel the second.
-        Thread.sleep(forTimeInterval: 0.2)
+
+        // Wait until the first job is actually running.
+        let startedDeadline = Date().addingTimeInterval(5)
+        while Date() < startedDeadline, !engine.isBusy {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.02))
+        }
+        XCTAssertTrue(engine.isBusy)
         engine.cancel(jobID: second.id)
-        engine.cancelAll()
-        let deadline = Date().addingTimeInterval(10)
-        while Date() < deadline {
-            let terminal = collector.states.filter(\.isTerminal).count
-            if terminal >= 2 { break }
+
+        let deadline = Date().addingTimeInterval(15)
+        while Date() < deadline, !collector.states.contains(.cancelled) || !collector.states.contains(.failed) {
             RunLoop.current.run(until: Date().addingTimeInterval(0.05))
         }
-        XCTAssertTrue(collector.states.contains(.cancelled))
+        XCTAssertTrue(collector.states.contains(.cancelled), "queued job must report cancelled")
+        XCTAssertEqual(collector.lastFinishedJob?.state != nil, true)
     }
 
     func testDiscardTemporaryFileRemovesArtifact() throws {
