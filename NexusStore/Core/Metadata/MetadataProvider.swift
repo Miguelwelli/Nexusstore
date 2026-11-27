@@ -119,6 +119,8 @@ public enum MetadataProviderError: LocalizedError, Equatable, Sendable {
             return "Falha de rede: \(message)"
         case .invalidResponse:
             return "O servidor respondeu em um formato inesperado."
+        case .server(404):
+            return "O endereço da API não foi encontrado (HTTP 404). Verifique a versão do app e tente novamente."
         case .server(let status):
             return "O servidor respondeu com erro HTTP \(status)."
         }
