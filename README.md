@@ -2,11 +2,10 @@
 
 **Loja de jogos para PS4, nativa para iPhone — Swift + SwiftUI, catálogo local, descoberta real de console na rede local, envio real de arquivos `.pkg` por FTP e central de transferência com métricas verdadeiras.**
 
-<p align="center">
-  <img src="Docs/screenshots/home.png" width="240" alt="Início" />
-  <img src="Docs/screenshots/catalog.png" width="240" alt="Catálogo" />
-  <img src="Docs/screenshots/detail.png" width="240" alt="Detalhe do jogo" />
-</p>
+> As telas seguem o layout de referência (fundo preto profundo, vermelho de destaque, cards
+> grafite, tab bar fixa). Não há capturas de tela do app em execução neste repositório porque o build
+> do iOS exige Xcode/macOS — ver [Limitações conhecidas](#limitações-conhecidas). O ícone do app e as
+> artes de demonstração estão em `NexusStore/Resources/Assets.xcassets/`.
 
 ---
 
