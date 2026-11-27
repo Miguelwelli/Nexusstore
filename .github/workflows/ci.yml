@@ -35,6 +35,13 @@ jobs:
         run: |
           set -o pipefail
           swift test -v 2>&1 | tee -a build.log
+      - name: Show failure context
+        if: failure()
+        run: |
+          echo "::group::tail of build.log"
+          tail -n 80 build.log 2>/dev/null || true
+          echo "::endgroup::"
+          echo "::notice title=swift core tail::$(tail -n 12 build.log 2>/dev/null | tr '\n' ' | ' | tr -d '%' | cut -c1-900)"
       - name: Publish summary
         if: always()
         run: |
