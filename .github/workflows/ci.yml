@@ -35,6 +35,12 @@ jobs:
         run: |
           set -o pipefail
           swift test -v 2>&1 | tee -a build.log
+      - name: Publish summary
+        if: always()
+        run: |
+          python3 Tools/extract_diagnostics.py build.log test-summary.log
+          grep -E "Executed [0-9]+ tests|ok: all" test-summary.log | tail -4 > summary-only.log || true
+          echo "::notice title=swift core summary::$(tr '\n' ' | ' < summary-only.log)"
       - name: Publish diagnostics
         if: failure()
         run: |
