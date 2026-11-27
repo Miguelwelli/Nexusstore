@@ -43,27 +43,14 @@ jobs:
       - name: Start a real FTP server (pyftpdlib)
         run: |
           set -e
-          mkdir -p /tmp/ftproot
           python3 -m pip install --quiet pyftpdlib
-          python3 - <<'PYSRV' > /tmp/ftp.log 2>&1 &
-import logging
-logging.basicConfig(filename="/tmp/ftp-internal.log", level=logging.INFO)
-from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer
-authorizer = DummyAuthorizer()
-# Full write access for the integration user, on a throwaway directory.
-authorizer.add_user("ps4", "ps4", "/tmp/ftproot", perm="elradfmwMT")
-handler = FTPHandler
-handler.authorizer = authorizer
-handler.passive_ports = range(50000, 50050)
-FTPServer(("0.0.0.0", 2121), handler).serve_forever()
-PYSRV
-          echo $! > /tmp/ftp.pid
+          mkdir -p /tmp/ftproot
+          nohup python3 Tools/ci/ftp_test_server.py 2121 /tmp/ftproot > /tmp/ftp.log 2>&1 &
           for i in $(seq 1 30); do
-            if (echo > /dev/tcp/127.0.0.1/2121) 2>/dev/null; then echo "FTP server is listening"; break; fi
+            if (echo > /dev/tcp/127.0.0.1/2121) 2>/dev/null; then echo "FTP server is listening"; exit 0; fi
             sleep 1
           done
+          echo "FTP server did not start"; cat /tmp/ftp.log; exit 1
       - name: Run FTP integration tests
         env:
           NEXUS_FTP_INTEGRATION: "1"
@@ -77,5 +64,6 @@ PYSRV
       - name: Publish diagnostics
         if: failure()
         run: |
+          cat /tmp/ftp.log || true
           python3 Tools/extract_diagnostics.py integration.log integration-errors.log
           python3 Tools/publish_log.py integration-errors.log "ftp integration"
