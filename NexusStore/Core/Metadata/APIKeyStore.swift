@@ -26,6 +26,52 @@ public enum APIKeyStoreError: LocalizedError {
 }
 #endif
 
+/// Moves a key saved by earlier versions (single `api-key` Keychain item) into the per-provider slots.
+///
+/// Release 1 of the assistant stored one key regardless of the selected provider. Now that RAWG and
+/// Gemini have separate accounts, a key left behind would silently disappear from the screen. This
+/// runs once at launch: a Google-shaped key becomes the Gemini key, anything else becomes the RAWG key,
+/// and the legacy item is deleted so the confusion cannot repeat.
+public enum APIKeyMigration {
+
+    public enum Destination: Equatable, Sendable {
+        case rawg
+        case gemini
+        case none
+    }
+
+    /// Which provider should inherit a legacy key, based on its shape.
+    public static func destination(forLegacyKey key: String) -> Destination {
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return .none }
+        return RAWGMetadataProvider.looksLikeGoogleKey(trimmed) ? .gemini : .rawg
+    }
+
+    /// - Returns: the destination the key was moved to (`.none` when there was nothing to do).
+    @discardableResult
+    public static func run(
+        legacy: APIKeyStoring,
+        rawg: APIKeyStoring,
+        gemini: APIKeyStoring
+    ) -> Destination {
+        guard let key = legacy.apiKey(), !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return .none
+        }
+        let target = destination(forLegacyKey: key)
+        switch target {
+        case .gemini:
+            // Never overwrite a key the admin already saved after the update.
+            if (gemini.apiKey() ?? "").isEmpty { try? gemini.save(key) }
+        case .rawg:
+            if (rawg.apiKey() ?? "").isEmpty { try? rawg.save(key) }
+        case .none:
+            break
+        }
+        legacy.delete()
+        return target
+    }
+}
+
 /// In-memory implementation used by tests and previews.
 public final class InMemoryAPIKeyStore: APIKeyStoring {
     private var value: String?

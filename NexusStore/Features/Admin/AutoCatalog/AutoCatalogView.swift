@@ -257,6 +257,10 @@ struct AutoCatalogView: View {
 
                 connectionRow
 
+                if assistant.configuration.model == .gemini {
+                    geminiExplainer
+                }
+
                 if assistant.apiKeyLooksWrongForGemini {
                     NoticeBanner(
                         "Essa chave não parece ser do Google AI. As chaves do Gemini começam com AIza — gere uma em aistudio.google.com/apikey.",
@@ -293,6 +297,38 @@ struct AutoCatalogView: View {
                 .foregroundStyle(NexusTheme.Palette.textTertiary)
             }
         }
+    }
+
+    /// One-paragraph, plain-language explanation of the Google-backed mode.
+    private var geminiExplainer: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "globe")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(NexusTheme.Palette.redBright)
+                Text("Como este modo pesquisa")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(NexusTheme.Palette.textPrimary)
+            }
+            Text("O Gemini recebe a ferramenta de Pesquisa Google: ele faz buscas reais, e cada jogo só entra se o Google devolver uma citação para ele. Jogos sem citação são descartados e contados.")
+                .font(.system(size: 10.5))
+                .foregroundStyle(NexusTheme.Palette.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Chave: aistudio.google.com/apikey (começa com AIza). Tamanho do .pkg só é preenchido se vier citado; link .pkg nunca é gerado pela IA.")
+                .font(.system(size: 10))
+                .foregroundStyle(NexusTheme.Palette.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(NexusTheme.Palette.red.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(NexusTheme.Palette.red.opacity(0.25), lineWidth: 1)
+        )
     }
 
     @ViewBuilder

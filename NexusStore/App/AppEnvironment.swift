@@ -82,12 +82,17 @@ public final class AppEnvironment {
         )
         discovery = PS4ConnectionService(consoles: consoles)
         settings = SettingsStore(fileURL: NexusFileStorage.settingsFile)
+        let rawgKeys = KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.rawg.credentialAccount)
+        let geminiKeys = KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.gemini.credentialAccount)
+        // Older builds stored a single key under "api-key"; move it to the provider it belongs to.
+        APIKeyMigration.run(
+            legacy: KeychainAPIKeyStore(account: "api-key"),
+            rawg: rawgKeys,
+            gemini: geminiKeys
+        )
         autoCatalog = AutoCatalogStore(
             repository: AutoCatalogRepository(fileURL: NexusFileStorage.autoCatalogFile),
-            keyStores: [
-                .rawg: KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.rawg.credentialAccount),
-                .gemini: KeychainAPIKeyStore(account: AutoCatalogConfiguration.Model.gemini.credentialAccount)
-            ],
+            keyStores: [.rawg: rawgKeys, .gemini: geminiKeys],
             catalog: catalog
         )
     }
