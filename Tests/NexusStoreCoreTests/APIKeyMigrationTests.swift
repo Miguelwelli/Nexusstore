@@ -6,9 +6,16 @@ import XCTest
 /// existing installation does not silently lose its key after the update.
 final class APIKeyMigrationTests: XCTestCase {
 
-    private func stores(_ legacy: String? = nil, rawg: String? = nil, gemini: String? = nil)
-        -> (legacy: InMemoryAPIKeyStore, rawg: InMemoryAPIKeyStore, gemini: InMemoryAPIKeyStore) {
-        (InMemoryAPIKeyStore(value: legacy), InMemoryAPIKeyStore(value: rawg), InMemoryAPIKeyStore(value: gemini))
+    private func stores(
+        legacy: String? = nil,
+        rawg: String? = nil,
+        gemini: String? = nil
+    ) -> (legacy: InMemoryAPIKeyStore, rawg: InMemoryAPIKeyStore, gemini: InMemoryAPIKeyStore) {
+        (
+            legacy: InMemoryAPIKeyStore(value: legacy),
+            rawg: InMemoryAPIKeyStore(value: rawg),
+            gemini: InMemoryAPIKeyStore(value: gemini)
+        )
     }
 
     func testGoogleShapedLegacyKeyMovesToGemini() {
@@ -16,7 +23,7 @@ final class APIKeyMigrationTests: XCTestCase {
         let s = stores(legacy: googleKey)
         let destination = APIKeyMigration.run(legacy: s.legacy, rawg: s.rawg, gemini: s.gemini)
 
-        XCTAssertEqual(destination, .gemini)
+        XCTAssertEqual(destination, APIKeyMigration.Destination.gemini)
         XCTAssertEqual(s.gemini.apiKey(), googleKey)
         XCTAssertNil(s.rawg.apiKey(), "uma chave do Google não pode cair no campo da RAWG")
         XCTAssertNil(s.legacy.apiKey(), "o item antigo deve ser removido")
@@ -25,7 +32,7 @@ final class APIKeyMigrationTests: XCTestCase {
     func testRawgShapedLegacyKeyMovesToRawg() {
         let rawgKey = String(repeating: "a1b2c3d4", count: 4)
         let s = stores(legacy: rawgKey)
-        XCTAssertEqual(APIKeyMigration.run(legacy: s.legacy, rawg: s.rawg, gemini: s.gemini), .rawg)
+        XCTAssertEqual(APIKeyMigration.run(legacy: s.legacy, rawg: s.rawg, gemini: s.gemini), APIKeyMigration.Destination.rawg)
         XCTAssertEqual(s.rawg.apiKey(), rawgKey)
         XCTAssertNil(s.gemini.apiKey())
     }
@@ -38,15 +45,15 @@ final class APIKeyMigrationTests: XCTestCase {
 
     func testNothingToMigrateIsANoOp() {
         let s = stores(legacy: "")
-        XCTAssertEqual(APIKeyMigration.run(legacy: s.legacy, rawg: s.rawg, gemini: s.gemini), .none)
+        XCTAssertEqual(APIKeyMigration.run(legacy: s.legacy, rawg: s.rawg, gemini: s.gemini), APIKeyMigration.Destination.none)
         XCTAssertNil(s.rawg.apiKey())
         XCTAssertNil(s.gemini.apiKey())
     }
 
     func testDestinationClassification() {
-        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "AIzaSy" + String(repeating: "x", count: 30)), .gemini)
-        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "0123456789abcdef0123456789abcdef"), .rawg)
-        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "   "), .none)
+        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "AIzaSy" + String(repeating: "x", count: 30)), APIKeyMigration.Destination.gemini)
+        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "0123456789abcdef0123456789abcdef"), APIKeyMigration.Destination.rawg)
+        XCTAssertEqual(APIKeyMigration.destination(forLegacyKey: "   "), APIKeyMigration.Destination.none)
     }
 
     func testEachProviderKeepsItsOwnKey() throws {
